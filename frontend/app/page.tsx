@@ -1,293 +1,299 @@
 "use client"
 
-import { useState } from "react"
+import type React from "react"
+
+import { useState, useEffect } from "react"
+import { Search, MapPin, ArrowRight, Music, Film, Trophy, Theater, Mic, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardFooter } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Header } from "@/components/header"
-import { Search, Calendar, MapPin, Star, Users, Filter, Heart, Share2, Ticket } from 'lucide-react'
-import Link from "next/link"
+import { GlassCard } from "@/components/ui/glass-card"
+import { Header } from "@/components/layout/header"
+import { Footer } from "@/components/layout/footer"
+import { EventCard } from "@/components/events/event-card"
+import { CategoryCard } from "@/components/events/category-card"
+import { TrendingCarousel } from "@/components/events/trending-carousel"
+import { useAppDispatch, useAppSelector } from "@/lib/hooks"
+import { fetchEvents } from "@/lib/slices/eventSlice"
+import type { Event } from "@/lib/slices/eventSlice"
 
-const featuredEvents = [
+// Mock data for demonstration
+const mockTrendingEvents: Event[] = [
   {
     id: "1",
     title: "Summer Music Festival 2024",
+    description: "The biggest music festival of the year featuring top artists",
+    category: "music",
+    date: "2024-07-15",
+    time: "18:00",
+    venue: {
+      id: "v1",
+      name: "Central Park",
+      address: "Central Park West",
+      city: "New York",
+      capacity: 50000,
+    },
+    price: { min: 89, max: 299 },
     image: "/placeholder.svg?height=400&width=600",
-    date: "July 15-17, 2024",
-    location: "Central Park, New York",
-    price: 89,
-    category: "Music",
-    rating: 4.8,
-    attendees: 2500,
-    description: "The biggest summer music festival featuring top artists from around the world"
+    organizer: { id: "o1", name: "MusicEvents Co" },
+    tags: ["festival", "outdoor", "multi-day"],
+    status: "upcoming",
   },
   {
     id: "2",
-    title: "Tech Innovation Summit",
+    title: "Marvel Movie Marathon",
+    description: "Watch all Marvel movies in chronological order",
+    category: "movies",
+    date: "2024-06-20",
+    time: "10:00",
+    venue: {
+      id: "v2",
+      name: "Grand Cinema",
+      address: "123 Movie St",
+      city: "Los Angeles",
+      capacity: 500,
+    },
+    price: { min: 25, max: 45 },
     image: "/placeholder.svg?height=400&width=600",
-    date: "August 22, 2024",
-    location: "Convention Center, San Francisco",
-    price: 299,
-    category: "Conference",
-    rating: 4.9,
-    attendees: 1200,
-    description: "Leading tech innovators share insights on the future of technology"
+    organizer: { id: "o2", name: "Cinema Events" },
+    tags: ["marathon", "superhero", "all-day"],
+    status: "upcoming",
   },
   {
     id: "3",
-    title: "Broadway Musical Night",
+    title: "Championship Finals",
+    description: "The ultimate showdown between top teams",
+    category: "sports",
+    date: "2024-08-10",
+    time: "19:30",
+    venue: {
+      id: "v3",
+      name: "Sports Arena",
+      address: "456 Stadium Ave",
+      city: "Chicago",
+      capacity: 25000,
+    },
+    price: { min: 150, max: 500 },
     image: "/placeholder.svg?height=400&width=600",
-    date: "September 5, 2024",
-    location: "Broadway Theater, NYC",
-    price: 125,
-    category: "Theater",
-    rating: 4.7,
-    attendees: 800,
-    description: "An enchanting evening of Broadway's greatest hits performed live"
-  }
+    organizer: { id: "o3", name: "Sports League" },
+    tags: ["championship", "finals", "premium"],
+    status: "upcoming",
+  },
 ]
 
-const categories = ["All", "Music", "Theater", "Conference", "Sports", "Comedy", "Art"]
+const categories = [
+  {
+    id: "music",
+    name: "Music",
+    icon: Music,
+    description: "Concerts, festivals, and live performances",
+    color: "from-purple-500 to-pink-500",
+    count: 234,
+  },
+  {
+    id: "movies",
+    name: "Movies",
+    icon: Film,
+    description: "Cinema screenings and film festivals",
+    color: "from-blue-500 to-cyan-500",
+    count: 156,
+  },
+  {
+    id: "sports",
+    name: "Sports",
+    icon: Trophy,
+    description: "Games, matches, and tournaments",
+    color: "from-green-500 to-emerald-500",
+    count: 89,
+  },
+  {
+    id: "theater",
+    name: "Theater",
+    icon: Theater,
+    description: "Plays, musicals, and performances",
+    color: "from-red-500 to-orange-500",
+    count: 67,
+  },
+  {
+    id: "comedy",
+    name: "Comedy",
+    icon: Mic,
+    description: "Stand-up shows and comedy nights",
+    color: "from-yellow-500 to-amber-500",
+    count: 45,
+  },
+  {
+    id: "other",
+    name: "Other",
+    icon: Users,
+    description: "Workshops, conferences, and more",
+    color: "from-gray-500 to-slate-500",
+    count: 123,
+  },
+]
 
 export default function HomePage() {
   const [searchQuery, setSearchQuery] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState("All")
+  const [searchLocation, setSearchLocation] = useState("")
+  const dispatch = useAppDispatch()
+  const { featuredEvents, isLoading } = useAppSelector((state) => state.events)
+
+  useEffect(() => {
+    // Fetch featured events on component mount
+    dispatch(fetchEvents({ page: 1, filters: {} }))
+  }, [dispatch])
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    // Navigate to search results page with query parameters
+    const params = new URLSearchParams()
+    if (searchQuery) params.set("q", searchQuery)
+    if (searchLocation) params.set("location", searchLocation)
+    window.location.href = `/events?${params.toString()}`
+  }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-purple-900">
       <Header />
 
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-purple-900 via-purple-800 to-pink-800 dark:from-purple-950 dark:via-purple-900 dark:to-pink-900 text-white py-20">
-        <div className="absolute inset-0 bg-black/20"></div>
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
-              Discover Amazing
-              <span className="block bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent">
-                Events & Shows
-              </span>
+      <section className="relative overflow-hidden py-20 px-4">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-600/20 to-blue-600/20 dark:from-purple-900/30 dark:to-blue-900/30" />
+        <div className="relative container mx-auto text-center">
+          <div className="max-w-4xl mx-auto">
+            <h1 className="text-5xl md:text-7xl font-display font-bold mb-6 animate-fade-in">
+              Discover Amazing <span className="gradient-primary bg-clip-text">Events</span>
             </h1>
-            <p className="text-xl mb-8 text-purple-100">
-              Book tickets for concerts, theater shows, conferences, and more. 
-              Your next unforgettable experience is just a click away.
+            <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mb-12 leading-relaxed">
+              Find and book tickets for concerts, movies, sports events, and unforgettable experiences in your city.
             </p>
-            
-            {/* Search Bar */}
-            <div className="max-w-2xl mx-auto bg-background rounded-full p-2 shadow-2xl">
-              <div className="flex items-center">
-                <div className="flex-1 flex items-center px-4">
-                  <Search className="w-5 h-5 text-muted-foreground mr-3" />
+
+            {/* Search Form */}
+            <GlassCard className="max-w-3xl mx-auto">
+              <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   <Input
+                    type="text"
                     placeholder="Search events, artists, venues..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="border-0 focus-visible:ring-0 placeholder:text-muted-foreground"
+                    className="pl-10 h-12 text-lg"
                   />
                 </div>
-                <Button className="rounded-full px-8 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700">
+                <div className="flex-1 relative">
+                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <Input
+                    type="text"
+                    placeholder="Location"
+                    value={searchLocation}
+                    onChange={(e) => setSearchLocation(e.target.value)}
+                    className="pl-10 h-12 text-lg"
+                  />
+                </div>
+                <Button type="submit" size="lg" className="gradient-primary text-white h-12 px-8">
+                  <Search className="h-5 w-5 mr-2" />
                   Search
                 </Button>
+              </form>
+            </GlassCard>
+
+            {/* Quick Stats */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-16">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-primary mb-2">10K+</div>
+                <div className="text-gray-600 dark:text-gray-300">Events</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-primary mb-2">500+</div>
+                <div className="text-gray-600 dark:text-gray-300">Venues</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-primary mb-2">1M+</div>
+                <div className="text-gray-600 dark:text-gray-300">Happy Customers</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-primary mb-2">50+</div>
+                <div className="text-gray-600 dark:text-gray-300">Cities</div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Categories */}
-      <section className="py-12 bg-muted/50">
-        <div className="container mx-auto px-4">
+      {/* Trending Events Carousel */}
+      <section className="py-16 px-4">
+        <div className="container mx-auto">
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-bold">Browse by Category</h2>
-            <Button variant="outline" size="sm">
-              <Filter className="w-4 h-4 mr-2" />
-              Filters
+            <div>
+              <h2 className="text-3xl font-display font-bold mb-2">Trending Events</h2>
+              <p className="text-gray-600 dark:text-gray-300">Don't miss out on these popular events</p>
+            </div>
+            <Button variant="outline" className="hidden md:flex bg-transparent">
+              View All <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
-          
-          <div className="flex flex-wrap gap-3">
+          <TrendingCarousel events={mockTrendingEvents} />
+        </div>
+      </section>
+
+      {/* Categories Grid */}
+      <section className="py-16 px-4 bg-white/50 dark:bg-gray-800/50">
+        <div className="container mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-display font-bold mb-4">Browse by Category</h2>
+            <p className="text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+              Explore events across different categories and find exactly what you're looking for
+            </p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
             {categories.map((category) => (
-              <Button
-                key={category}
-                variant={selectedCategory === category ? "default" : "outline"}
-                size="sm"
-                onClick={() => setSelectedCategory(category)}
-                className={selectedCategory === category ? "bg-purple-600 hover:bg-purple-700" : ""}
-              >
-                {category}
-              </Button>
+              <CategoryCard key={category.id} category={category} />
             ))}
           </div>
         </div>
       </section>
 
       {/* Featured Events */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Featured Events</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Don't miss out on these incredible events happening near you
-            </p>
+      <section className="py-16 px-4">
+        <div className="container mx-auto">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-3xl font-display font-bold mb-2">Featured Events</h2>
+              <p className="text-gray-600 dark:text-gray-300">Hand-picked events just for you</p>
+            </div>
+            <Button variant="outline" className="hidden md:flex bg-transparent">
+              View All <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
           </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredEvents.map((event) => (
-              <Card key={event.id} className="overflow-hidden hover:shadow-xl transition-all duration-300 group">
-                <div className="relative">
-                  <img
-                    src={event.image || "/placeholder.svg"}
-                    alt={event.title}
-                    className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute top-4 left-4">
-                    <Badge className="bg-purple-600 hover:bg-purple-700">
-                      {event.category}
-                    </Badge>
-                  </div>
-                  <div className="absolute top-4 right-4 flex space-x-2">
-                    <Button size="icon" variant="secondary" className="w-8 h-8 bg-white/90 hover:bg-white">
-                      <Heart className="w-4 h-4" />
-                    </Button>
-                    <Button size="icon" variant="secondary" className="w-8 h-8 bg-white/90 hover:bg-white">
-                      <Share2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-                
-                <CardContent className="p-6">
-                  <h3 className="text-xl font-semibold mb-2 group-hover:text-purple-600 transition-colors">
-                    {event.title}
-                  </h3>
-                  <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
-                    {event.description}
-                  </p>
-                  
-                  <div className="space-y-2 mb-4">
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <Calendar className="w-4 h-4 mr-2" />
-                      {event.date}
-                    </div>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <MapPin className="w-4 h-4 mr-2" />
-                      {event.location}
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <Users className="w-4 h-4 mr-2" />
-                        {event.attendees.toLocaleString()} attending
-                      </div>
-                      <div className="flex items-center text-sm">
-                        <Star className="w-4 h-4 mr-1 fill-yellow-400 text-yellow-400" />
-                        {event.rating}
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-                
-                <CardFooter className="p-6 pt-0 flex items-center justify-between">
-                  <div className="text-2xl font-bold text-purple-600">
-                    ${event.price}
-                  </div>
-                  <Button className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700" asChild>
-                    <Link href={`/event/${event.id}`}>Book Now</Link>
-                  </Button>
-                </CardFooter>
-              </Card>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {mockTrendingEvents.map((event) => (
+              <EventCard key={event.id} event={event} />
             ))}
           </div>
-          
-          <div className="text-center mt-12">
-            <Button variant="outline" size="lg" asChild>
-              <Link href="/events">View All Events</Link>
+        </div>
+      </section>
+
+      {/* Newsletter Signup */}
+      <section className="py-16 px-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white">
+        <div className="container mx-auto text-center">
+          <h2 className="text-3xl font-display font-bold mb-4">Never Miss an Event</h2>
+          <p className="text-xl mb-8 opacity-90">
+            Subscribe to our newsletter and get notified about the latest events in your area
+          </p>
+          <div className="max-w-md mx-auto flex gap-4">
+            <Input
+              type="email"
+              placeholder="Enter your email"
+              className="bg-white/10 border-white/20 text-white placeholder:text-white/70"
+            />
+            <Button variant="secondary" className="bg-white text-purple-600 hover:bg-gray-100">
+              Subscribe
             </Button>
           </div>
         </div>
       </section>
 
-      {/* Stats Section */}
-      <section className="py-16 bg-gradient-to-r from-purple-600 to-pink-600 text-white">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8 text-center">
-            <div>
-              <div className="text-4xl font-bold mb-2">50K+</div>
-              <div className="text-purple-100">Events Hosted</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold mb-2">2M+</div>
-              <div className="text-purple-100">Happy Customers</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold mb-2">500+</div>
-              <div className="text-purple-100">Cities Covered</div>
-            </div>
-            <div>
-              <div className="text-4xl font-bold mb-2">4.9★</div>
-              <div className="text-purple-100">Average Rating</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-muted py-12">
-        <div className="container mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg flex items-center justify-center">
-                  <Ticket className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-xl font-bold">EventHub</span>
-              </div>
-              <p className="text-muted-foreground text-sm">
-                Your premier destination for discovering and booking amazing events and shows.
-              </p>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Quick Links</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/events" className="hover:text-foreground transition-colors">Browse Events</Link></li>
-                <li><Link href="/categories" className="hover:text-foreground transition-colors">Categories</Link></li>
-                <li><Link href="/venues" className="hover:text-foreground transition-colors">Venues</Link></li>
-                <li><Link href="/organizers" className="hover:text-foreground transition-colors">For Organizers</Link></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Support</h4>
-              <ul className="space-y-2 text-sm text-muted-foreground">
-                <li><Link href="/help" className="hover:text-foreground transition-colors">Help Center</Link></li>
-                <li><Link href="/contact" className="hover:text-foreground transition-colors">Contact Us</Link></li>
-                <li><Link href="/refunds" className="hover:text-foreground transition-colors">Refund Policy</Link></li>
-                <li><Link href="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h4 className="font-semibold mb-4">Stay Updated</h4>
-              <p className="text-muted-foreground text-sm mb-4">
-                Get notified about new events and exclusive offers.
-              </p>
-              <div className="flex">
-                <Input 
-                  placeholder="Enter your email" 
-                  className="rounded-r-none"
-                />
-                <Button className="rounded-l-none bg-purple-600 hover:bg-purple-700">
-                  Subscribe
-                </Button>
-              </div>
-            </div>
-          </div>
-          
-          <div className="border-t mt-8 pt-8 text-center text-sm text-muted-foreground">
-            <p>&copy; 2024 EventHub. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }
