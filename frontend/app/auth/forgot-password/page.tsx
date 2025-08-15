@@ -80,10 +80,10 @@ export default function ForgotPasswordPage() {
                 <Button onClick={() => setIsSubmitted(false)} variant="outline" className="w-full">
                   Try Different Email
                 </Button>
-                <Link href="/auth/login">
+                <Link href="/auth/signin">
                   <Button variant="ghost" className="w-full">
                     <ArrowLeft className="h-4 w-4 mr-2" />
-                    Back to Login
+                    Back to signin
                   </Button>
                 </Link>
               </div>
@@ -134,11 +134,11 @@ export default function ForgotPasswordPage() {
 
           <div className="mt-6 text-center">
             <Link
-              href="/auth/login"
+              href="/auth/signin"
               className="inline-flex items-center text-sm text-gray-600 dark:text-gray-300 hover:text-primary"
             >
               <ArrowLeft className="h-4 w-4 mr-1" />
-              Back to Login
+              Back to signin
             </Link>
           </div>
         </GlassCard>

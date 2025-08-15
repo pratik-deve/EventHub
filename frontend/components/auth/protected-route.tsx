@@ -13,7 +13,7 @@ interface ProtectedRouteProps {
   fallbackPath?: string
 }
 
-export function ProtectedRoute({ children, requiredRole, fallbackPath = "/auth/login" }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, requiredRole, fallbackPath = "/auth/signin" }: ProtectedRouteProps) {
   const { isAuthenticated, user, isLoading } = useAppSelector((state) => state.auth)
   const router = useRouter()
 

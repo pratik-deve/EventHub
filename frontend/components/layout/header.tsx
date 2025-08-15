@@ -67,55 +67,31 @@ export function Header() {
             <ThemeToggle />
 
             {isAuthenticated ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={user?.avatar || "/placeholder.svg"} alt={user?.name} />
-                      <AvatarFallback>{user?.name?.charAt(0)?.toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-56" align="end" forceMount>
-                  <div className="flex items-center justify-start gap-2 p-2">
-                    <div className="flex flex-col space-y-1 leading-none">
-                      <p className="font-medium">{user?.name}</p>
-                      <p className="w-[200px] truncate text-sm text-muted-foreground">{user?.email}</p>
-                    </div>
-                  </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard">
-                      <User className="mr-2 h-4 w-4" />
-                      Dashboard
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/bookings">
-                      <Calendar className="mr-2 h-4 w-4" />
-                      My Bookings
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link href="/settings">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Settings
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    Log out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <>
+                <span className="hidden md:inline text-gray-700 dark:text-gray-200 font-medium">
+                  Welcome {user?.name || user?.username || "User"}
+                </span>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full"
+                    onClick={() => router.push("/dashboard")}
+                    >
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={user?.avatar || "/placeholder.svg"} alt={user?.name} />
+                        <AvatarFallback>{user?.name?.charAt(0)?.toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  {/* ...existing DropdownMenuContent... */}
+                </DropdownMenu>
+              </>
             ) : (
               <div className="hidden md:flex items-center space-x-2">
                 <Button variant="ghost" asChild>
-                  <Link href="/auth/login">Sign In</Link>
+                  <Link href="/auth/signin">Sign In</Link>
                 </Button>
                 <Button asChild className="gradient-primary text-white">
-                  <Link href="/auth/register">Sign Up</Link>
+                  <Link href="/auth/singup">Sign Up</Link>
                 </Button>
               </div>
             )}
@@ -149,12 +125,12 @@ export function Header() {
               {!isAuthenticated && (
                 <div className="pt-4 space-y-2">
                   <Button variant="ghost" asChild className="w-full justify-start">
-                    <Link href="/auth/login" onClick={() => setIsMobileMenuOpen(false)}>
+                    <Link href="/auth/signin" onClick={() => setIsMobileMenuOpen(false)}>
                       Sign In
                     </Link>
                   </Button>
                   <Button asChild className="w-full gradient-primary text-white">
-                    <Link href="/auth/register" onClick={() => setIsMobileMenuOpen(false)}>
+                    <Link href="/auth/singup" onClick={() => setIsMobileMenuOpen(false)}>
                       Sign Up
                     </Link>
                   </Button>

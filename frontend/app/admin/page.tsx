@@ -387,7 +387,7 @@ export default function AdminDashboard() {
               <Card className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm">
                 <CardHeader>
                   <CardTitle>User Management</CardTitle>
-                  <CardDescription>View and manage registered users</CardDescription>
+                  <CardDescription>View and manage singuped users</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">

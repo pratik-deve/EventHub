@@ -131,7 +131,7 @@ export default function SeatSelectionPage() {
 
   const handleContinueToCheckout = () => {
     if (!isAuthenticated) {
-      router.push(`/auth/login?redirect=/events/${eventId}/checkout`)
+      router.push(`/auth/signin?redirect=/events/${eventId}/checkout`)
       return
     }
 

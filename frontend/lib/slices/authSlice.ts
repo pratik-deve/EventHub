@@ -1,9 +1,9 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from "@reduxjs/toolkit"
 
 export interface User {
-  id: string
-  email: string
-  name: string
+  // id: string
+  username: string
+  // name: string
   role: "user" | "admin" | "organizer"
   avatar?: string
 }
@@ -25,11 +25,11 @@ const initialState: AuthState = {
 }
 
 // Async thunks for API calls
-export const loginUser = createAsyncThunk(
-  "auth/login",
+export const signinUser = createAsyncThunk(
+  "auth/signin",
   async ({ email, password }: { email: string; password: string }) => {
     // Mock API call - replace with actual API
-    const response = await fetch("/api/auth/login", {
+    const response = await fetch("/api/auth/signin", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -38,10 +38,10 @@ export const loginUser = createAsyncThunk(
   },
 )
 
-export const registerUser = createAsyncThunk(
-  "auth/register",
+export const singupUser = createAsyncThunk(
+  "auth/singup",
   async ({ email, password, name }: { email: string; password: string; name: string }) => {
-    const response = await fetch("/api/auth/register", {
+    const response = await fetch("/api/auth/singup", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password, name }),
@@ -71,31 +71,31 @@ const authSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(loginUser.pending, (state) => {
+      .addCase(signinUser.pending, (state) => {
         state.isLoading = true
         state.error = null
       })
-      .addCase(loginUser.fulfilled, (state, action) => {
+      .addCase(signinUser.fulfilled, (state, action) => {
         state.isLoading = false
         state.user = action.payload.user
         state.token = action.payload.token
         state.isAuthenticated = true
       })
-      .addCase(loginUser.rejected, (state, action) => {
+      .addCase(signinUser.rejected, (state, action) => {
         state.isLoading = false
-        state.error = action.error.message || "Login failed"
+        state.error = action.error.message || "signin failed"
       })
-      .addCase(registerUser.pending, (state) => {
+      .addCase(singupUser.pending, (state) => {
         state.isLoading = true
         state.error = null
       })
-      .addCase(registerUser.fulfilled, (state, action) => {
+      .addCase(singupUser.fulfilled, (state, action) => {
         state.isLoading = false
         state.user = action.payload.user
         state.token = action.payload.token
         state.isAuthenticated = true
       })
-      .addCase(registerUser.rejected, (state, action) => {
+      .addCase(singupUser.rejected, (state, action) => {
         state.isLoading = false
         state.error = action.error.message || "Registration failed"
       })

@@ -5,34 +5,31 @@ import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { Eye, EyeOff, Mail, Lock, Github } from "lucide-react"
+import { Eye, EyeOff, User, Lock, Github } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { GlassCard } from "@/components/ui/glass-card"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
-import { useAppDispatch, useAppSelector } from "@/lib/hooks"
-import { loginUser, clearError } from "@/lib/slices/authSlice"
 import { useToast } from "@/hooks/use-toast"
+import { useAppDispatch } from "@/lib/hooks"
+import { setCredentials, clearError } from "@/lib/slices/authSlice"
 
-export default function LoginPage() {
-  const [email, setEmail] = useState("")
+export default function SigninPage() {
+  const [login, setLogin] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
-  const [errors, setErrors] = useState<{ email?: string; password?: string }>({})
+  const [errors, setErrors] = useState<{ login?: string; password?: string }>({})
 
-  const dispatch = useAppDispatch()
-  const { isLoading, error } = useAppSelector((state) => state.auth)
   const router = useRouter()
   const { toast } = useToast()
+  const dispatch = useAppDispatch()
 
   const validateForm = () => {
-    const newErrors: { email?: string; password?: string } = {}
+    const newErrors: { login?: string; password?: string } = {}
 
-    if (!email) {
-      newErrors.email = "Email is required"
-    } else if (!/\S+@\S+\.\S+/.test(email)) {
-      newErrors.email = "Email is invalid"
+    if (!login) {
+      newErrors.login = "Username or Email is required"
     }
 
     if (!password) {
@@ -52,26 +49,62 @@ export default function LoginPage() {
     if (!validateForm()) return
 
     try {
-      const result = await dispatch(loginUser({ email, password })).unwrap()
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/signin`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          login,
+          password,
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.message || "Signin failed")
+      }
+
+      const data = await response.json()
+
+      // Set user as authenticated and store user object
+      // dispatch(setCredentials({
+      //   user: {
+      //     // id: data.user.id,
+      //     // email: data.user.email,
+      //     name: login
+      //     // role: data.user.role,
+      //     // avatar: data.user.avatar,
+      //   },
+      //   token: data.token,
+      // }))
+
+      dispatch(setCredentials({
+        user: {
+          username: login, 
+          role: 'user'
+        },      // or keep as null/undefined for now
+        token: data.token,
+      }))
+
       toast({
-        title: "Login successful",
+        title: "Signin successful",
         description: "Welcome back!",
       })
       router.push("/dashboard")
-    } catch (error) {
+    } catch (error: any) {
       toast({
-        title: "Login failed",
-        description: error as string,
+        title: "Signin failed",
+        description: error.message || "Something went wrong",
         variant: "destructive",
       })
     }
   }
 
-  const handleOAuthLogin = (provider: string) => {
-    // Mock OAuth implementation - replace with actual OAuth flow
+  const handleOAuthSignin = (provider: string) => {
     toast({
-      title: "OAuth Login",
-      description: `${provider} login will be implemented with backend integration`,
+      title: "OAuth signin",
+      description: `${provider} signin will be implemented with backend integration`,
     })
   }
 
@@ -87,23 +120,23 @@ export default function LoginPage() {
 
         <GlassCard>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email Field */}
+            {/* Username or Email Field */}
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium">
-                Email Address
+              <Label htmlFor="login" className="text-sm font-medium">
+                Username or Email
               </Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className={`pl-10 ${errors.email ? "border-red-500" : ""}`}
-                  placeholder="Enter your email"
+                  id="login"
+                  type="text"
+                  value={login}
+                  onChange={(e) => setLogin(e.target.value)}
+                  className={`pl-10 ${errors.login ? "border-red-500" : ""}`}
+                  placeholder="Enter your username or email"
                 />
               </div>
-              {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
+              {errors.login && <p className="text-sm text-red-500">{errors.login}</p>}
             </div>
 
             {/* Password Field */}
@@ -132,26 +165,8 @@ export default function LoginPage() {
               {errors.password && <p className="text-sm text-red-500">{errors.password}</p>}
             </div>
 
-            {/* Remember Me & Forgot Password */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-2">
-                <input
-                  id="remember"
-                  type="checkbox"
-                  className="rounded border-gray-300 text-primary focus:ring-primary"
-                />
-                <Label htmlFor="remember" className="text-sm text-gray-600 dark:text-gray-300">
-                  Remember me
-                </Label>
-              </div>
-              <Link href="/auth/forgot-password" className="text-sm text-primary hover:underline">
-                Forgot password?
-              </Link>
-            </div>
-
             {/* Submit Button */}
-            <Button type="submit" className="w-full gradient-primary text-white" disabled={isLoading}>
-              {isLoading ? <LoadingSpinner size="sm" className="mr-2" /> : null}
+            <Button type="submit" className="w-full gradient-primary text-white">
               Sign In
             </Button>
 
@@ -167,7 +182,7 @@ export default function LoginPage() {
 
             {/* OAuth Buttons */}
             <div className="grid grid-cols-2 gap-3">
-              <Button type="button" variant="outline" onClick={() => handleOAuthLogin("Google")} className="w-full">
+              <Button type="button" variant="outline" onClick={() => handleOAuthSignin("Google")} className="w-full">
                 <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24">
                   <path
                     fill="currentColor"
@@ -188,7 +203,7 @@ export default function LoginPage() {
                 </svg>
                 Google
               </Button>
-              <Button type="button" variant="outline" onClick={() => handleOAuthLogin("GitHub")} className="w-full">
+              <Button type="button" variant="outline" onClick={() => handleOAuthSignin("GitHub")} className="w-full">
                 <Github className="h-4 w-4 mr-2" />
                 GitHub
               </Button>
@@ -199,7 +214,7 @@ export default function LoginPage() {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600 dark:text-gray-300">
               Don't have an account?{" "}
-              <Link href="/auth/register" className="text-primary hover:underline font-medium">
+              <Link href="/auth/signup" className="text-primary hover:underline font-medium">
                 Sign up
               </Link>
             </p>

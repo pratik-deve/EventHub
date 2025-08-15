@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Calendar, MapPin, Clock, Download, Star, Settings, Ticket, Heart } from "lucide-react"
 import { AuthGuard } from "@/components/auth/auth-guard"
+import Link from "next/link"
+
 
 // Mock data for user bookings and favorites
 const mockBookings = [
@@ -85,6 +87,12 @@ export default function DashboardPage() {
     (booking) => new Date(booking.date) <= new Date() || booking.status === "completed",
   )
 
+  const handleSignOut = () => {
+    // Clear any auth tokens or user info here if needed
+    localStorage.clear()
+    window.location.href = "/"
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "confirmed":
@@ -99,7 +107,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <AuthGuard>
+     <AuthGuard>
       <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-indigo-100 dark:from-gray-900 dark:via-purple-900 dark:to-indigo-900">
         <div className="container mx-auto px-4 py-8">
           {/* Header */}
@@ -109,12 +117,28 @@ export default function DashboardPage() {
                 <AvatarImage src={user?.avatar || "/placeholder.svg"} alt={user?.name} />
                 <AvatarFallback className="text-lg font-semibold">{user?.name?.charAt(0) || "U"}</AvatarFallback>
               </Avatar>
-              <div>
+              <div className="flex-1">
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
                   Welcome back, {user?.name || "User"}!
                 </h1>
                 <p className="text-gray-600 dark:text-gray-300">Manage your bookings and discover new events</p>
               </div>
+              {/* Home and Sign Out Buttons */}
+              <div className="flex gap-2">
+                <Link href="/" className="inline-block">
+                  <Button variant="outline">Home</Button>
+                </Link>
+                <Button variant="destructive" onClick={handleSignOut}>
+                  Sign Out
+                </Button>
+              </div>
+            </div>
+            <div className="flex justify-end mb-4">
+              <Link href="/dashboard/organize">
+                <Button className="gradient-primary text-white">
+                  Organize Event
+                </Button>
+              </Link>
             </div>
 
             {/* Quick Stats */}

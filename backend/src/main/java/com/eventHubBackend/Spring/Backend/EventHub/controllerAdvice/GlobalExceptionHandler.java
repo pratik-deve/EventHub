@@ -1,5 +1,6 @@
 package com.eventHubBackend.Spring.Backend.EventHub.controllerAdvice;
 
+import com.eventHubBackend.Spring.Backend.EventHub.exception.InvalidJwtSignatureException;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureException;
@@ -65,5 +66,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleIllegalArgument(IllegalArgumentException ex) {
         return buildResponse(HttpStatus.BAD_REQUEST, "JWT token is empty or null", ex.getMessage());
+    }
+
+
+
+    @ExceptionHandler(InvalidJwtSignatureException.class)
+    public ResponseEntity<Map<String, Object>> handleInvalidJwt(InvalidJwtSignatureException ex) {
+        return buildResponse(HttpStatus.UNAUTHORIZED, "", ex.getMessage());
     }
 }

@@ -12,10 +12,13 @@ import { Label } from "@/components/ui/label"
 import { GlassCard } from "@/components/ui/glass-card"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { useAppDispatch, useAppSelector } from "@/lib/hooks"
-import { registerUser, clearError } from "@/lib/slices/authSlice"
+import { singupUser, clearError } from "@/lib/slices/authSlice"
 import { useToast } from "@/hooks/use-toast"
+import { setCredentials } from "@/lib/slices/authSlice"
 
-export default function RegisterPage() {
+
+
+export default function singupPage() {
   const [formData, setFormData] = useState({
     username: "",
     email: "",
@@ -70,42 +73,53 @@ export default function RegisterPage() {
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    dispatch(clearError())
+  e.preventDefault()
+  dispatch(clearError())
 
-    if (!validateForm()) return  
-  
-    try {
-      const response = await fetch(`${process.env.BACKEND_URL}/signup`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username: formData.username,
-          email: formData.email,
-          password: formData.password,
-        }),
-      })
+  if (!validateForm()) return
 
-      if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.message || "Registration failed")
-      }
+  try {
+    const response = await fetch(`${process.env.BACKEND_URL}/signup`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+      }),
+    })
 
-      toast({
-        title: "Registration successful",
-        description: "Welcome to EventHub!",
-      })
-      router.push("/dashboard")
-    } catch (error: any) {
-      toast({
-        title: "Registration failed",
-        description: error.message || "Something went wrong",
-        variant: "destructive",
-      })
+    if (!response.ok) {
+      const data = await response.json()
+      throw new Error(data.message || "Registration failed")
     }
+
+    const data = await response.json()
+
+    // Set user as authenticated and store user object
+    dispatch(setCredentials({
+            user: {
+              username: formData.username, 
+              role: 'user'
+            },      // or keep as null/undefined for now
+            token: data.token,
+          }))
+
+    toast({
+      title: "Registration successful",
+      description: "Welcome to EventHub!",
+    })
+    router.push("/dashboard")
+  } catch (error: any) {
+    toast({
+      title: "Registration failed",
+      description: error.message || "Something went wrong",
+      variant: "destructive",
+    })
   }
+}
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
@@ -115,7 +129,7 @@ export default function RegisterPage() {
     }
   }
 
-  const handleOAuthRegister = (provider: string) => {
+  const handleOAuthsingup = (provider: string) => {
     toast({
       title: "OAuth Registration",
       description: `${provider} registration will be implemented with backend integration`,
@@ -268,7 +282,7 @@ export default function RegisterPage() {
 
             {/* OAuth Buttons */}
             <div className="grid grid-cols-2 gap-3">
-              <Button type="button" variant="outline" onClick={() => handleOAuthRegister("Google")} className="w-full">
+              <Button type="button" variant="outline" onClick={() => handleOAuthsingup("Google")} className="w-full">
                 <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24">
                   <path
                     fill="currentColor"
@@ -289,7 +303,7 @@ export default function RegisterPage() {
                 </svg>
                 Google
               </Button>
-              <Button type="button" variant="outline" onClick={() => handleOAuthRegister("GitHub")} className="w-full">
+              <Button type="button" variant="outline" onClick={() => handleOAuthsingup("GitHub")} className="w-full">
                 <Github className="h-4 w-4 mr-2" />
                 GitHub
               </Button>
@@ -300,7 +314,7 @@ export default function RegisterPage() {
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600 dark:text-gray-300">
               Already have an account?{" "}
-              <Link href="/auth/login" className="text-primary hover:underline font-medium">
+              <Link href="/auth/signin" className="text-primary hover:underline font-medium">
                 Sign in
               </Link>
             </p>
