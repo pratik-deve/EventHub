@@ -6,6 +6,7 @@ import com.eventHubBackend.Spring.Backend.EventHub.reqresdto.LoginRequest;
 import com.eventHubBackend.Spring.Backend.EventHub.jwt.JwtService;
 import com.eventHubBackend.Spring.Backend.EventHub.model.User;
 import com.eventHubBackend.Spring.Backend.EventHub.principles.UserPrinciple;
+import com.eventHubBackend.Spring.Backend.EventHub.reqresdto.UserResponse;
 import com.eventHubBackend.Spring.Backend.EventHub.service.EventUserDetailsService;
 import com.eventHubBackend.Spring.Backend.EventHub.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,7 +28,6 @@ import java.util.Map;
 @RequestMapping("/api/users")
 public class UserController {
 
-
     @Autowired
     UserService service;
 
@@ -39,6 +39,26 @@ public class UserController {
 
     @Autowired
     EventUserDetailsService userDetailsService;
+
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser(Authentication authentication) {
+
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
+        }
+
+        UserPrinciple userDetails = (UserPrinciple) authentication.getPrincipal();
+
+
+        UserResponse userResponse = UserResponse.builder()
+                .username(userDetails.getUsername())
+                .email(userDetails.getEmail())
+                .roles(userDetails.getAuthorities())
+                .build();
+
+        return ResponseEntity.ok(userResponse);
+    }
 
 
     @PostMapping("/signup")

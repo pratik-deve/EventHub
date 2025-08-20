@@ -41,7 +41,7 @@ public class SecurityConfig {
             "/api/users/signup",
             "/api/users/signin",
             "/api/users/oauth2/success",
-            "/api/events/public/**", // example for public events list
+            "/api/events/**", // example for public events list
             "/swagger-ui/**",        // if you expose Swagger
             "/v3/api-docs/**"    // OpenAPI docs
     };
