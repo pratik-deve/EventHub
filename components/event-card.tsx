@@ -92,6 +92,12 @@ export function EventCard({ event }: EventCardProps) {
             <Share2 className="h-4 w-4" />
           </Button>
         </div>
+
+        {/* Category Tag */}
+        <div className="absolute bottom-3 left-3 bg-background/90 backdrop-blur-sm rounded-full px-3 py-1 text-sm font-medium">
+          {event.category}
+        </div>
+
         <div className="absolute bottom-3 right-3 bg-background/90 backdrop-blur-sm rounded-full px-3 py-1 text-sm font-medium">
           ${event.price}
         </div>

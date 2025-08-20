@@ -1,138 +1,42 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Navbar } from "@/components/navbar"
 import { EventCard } from "@/components/event-card"
 import { SearchFilters } from "@/components/search-filters"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Sparkles, TrendingUp } from "lucide-react"
+import { indianStates } from "@/public/constants/constants"
 
-// Mock event data
-const mockEvents = [
-  {
-    id: "1",
-    title: "Summer Music Festival 2024",
-    description: "Join us for an unforgettable night of music featuring top artists from around the world.",
-    date: "2024-07-15",
-    time: "18:00",
-    venue: "Central Park Amphitheater",
-    location: "New York, NY",
-    price: 89,
-    category: "Music",
-    rating: 4.8,
-    attendees: 2500,
-    image: "/placeholder.svg?height=200&width=300",
-    featured: true,
-  },
-  {
-    id: "2",
-    title: "Tech Innovation Conference",
-    description: "Discover the latest trends in technology and network with industry leaders.",
-    date: "2024-08-22",
-    time: "09:00",
-    venue: "Convention Center",
-    location: "San Francisco, CA",
-    price: 299,
-    category: "Technology",
-    rating: 4.9,
-    attendees: 1200,
-    image: "/placeholder.svg?height=200&width=300",
-    featured: false,
-  },
-  {
-    id: "3",
-    title: "Food & Wine Tasting",
-    description: "Experience exquisite cuisine and fine wines from renowned chefs and sommeliers.",
-    date: "2024-06-30",
-    time: "19:30",
-    venue: "Grand Hotel Ballroom",
-    location: "Chicago, IL",
-    price: 125,
-    category: "Food & Drink",
-    rating: 4.7,
-    attendees: 300,
-    image: "/placeholder.svg?height=200&width=300",
-    featured: true,
-  },
-  {
-    id: "4",
-    title: "Art Gallery Opening",
-    description: "Celebrate contemporary art with an exclusive gallery opening featuring emerging artists.",
-    date: "2024-07-08",
-    time: "18:00",
-    venue: "Modern Art Museum",
-    location: "Los Angeles, CA",
-    price: 45,
-    category: "Arts & Culture",
-    rating: 4.6,
-    attendees: 150,
-    image: "/placeholder.svg?height=200&width=300",
-    featured: false,
-  },
-  {
-    id: "5",
-    title: "Marathon Training Workshop",
-    description: "Professional training session for marathon preparation with expert coaches.",
-    date: "2024-07-20",
-    time: "07:00",
-    venue: "City Sports Complex",
-    location: "Boston, MA",
-    price: 75,
-    category: "Sports & Fitness",
-    rating: 4.5,
-    attendees: 80,
-    image: "/placeholder.svg?height=200&width=300",
-    featured: false,
-  },
-  {
-    id: "6",
-    title: "Business Networking Mixer",
-    description: "Connect with professionals and entrepreneurs in a relaxed networking environment.",
-    date: "2024-08-05",
-    time: "18:30",
-    venue: "Rooftop Lounge",
-    location: "Miami, FL",
-    price: 35,
-    category: "Business",
-    rating: 4.4,
-    attendees: 200,
-    image: "/placeholder.svg?height=200&width=300",
-    featured: false,
-  },
-  {
-    id: "7",
-    title: "Jazz Night Under the Stars",
-    description: "An intimate evening of smooth jazz in a beautiful outdoor setting.",
-    date: "2024-08-10",
-    time: "20:00",
-    venue: "Riverside Park",
-    location: "New York, NY",
-    price: 65,
-    category: "Music",
-    rating: 4.7,
-    attendees: 400,
-    image: "/placeholder.svg?height=200&width=300",
-    featured: true,
-  },
-  {
-    id: "8",
-    title: "Digital Marketing Summit",
-    description: "Learn the latest digital marketing strategies from industry experts.",
-    date: "2024-09-05",
-    time: "09:00",
-    venue: "Tech Hub",
-    location: "San Francisco, CA",
-    price: 199,
-    category: "Technology",
-    rating: 4.8,
-    attendees: 800,
-    image: "/placeholder.svg?height=200&width=300",
-    featured: false,
-  },
-]
 
+// Utility function to generate random values
+const getRandomValue = (array: any[]) => array[Math.floor(Math.random() * array.length)]
+
+const eventCategoryLabels: Record<string, string> = {
+  GENERAL: "General",
+  MUSIC: "Music",
+  TECHNOLOGY: "Technology",
+  FOOD_AND_DRINK: "Food & Drink",
+  ARTS_AND_CULTURE: "Arts & Culture",
+  SPORTS_AND_FITNESS: "Sports & Fitness",
+  BUSINESS: "Business",
+}
+
+const getCategoryLabel = (categoryKey: string): string => {
+  return eventCategoryLabels[categoryKey] || "General" // Default to "General" if the key is not found
+}
+
+const extractStateFromAddress = (address: string): string => {
+  for (const state of indianStates) {
+    if (address.toLowerCase().includes(state.toLowerCase())) {
+      return state
+    }
+  }
+  return "Unknown Location" // Default if no state is found
+}
 export default function EventsPage() {
+  const [events, setEvents] = useState<any[]>([]) // State to store events fetched from the backend
   const [filters, setFilters] = useState({
     searchQuery: "",
     category: "All",
@@ -142,46 +46,98 @@ export default function EventsPage() {
     sortBy: "date",
   })
 
-  const filteredEvents = useMemo(() => {
-    return mockEvents
-      .filter((event) => {
-        const matchesSearch =
-          event.title.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
-          event.location.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
-          event.description.toLowerCase().includes(filters.searchQuery.toLowerCase())
-        const matchesCategory = filters.category === "All" || event.category === filters.category
-        const matchesLocation = filters.location === "All" || event.location === filters.location
-        const matchesPrice = event.price >= filters.priceRange[0] && event.price <= filters.priceRange[1]
+  // Fetch events from the backend
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/events/public`)
+        const data = await response.json()
 
-        let matchesDate = true
-        if (filters.dateRange.from) {
-          const eventDate = new Date(event.date)
-          const fromDate = new Date(filters.dateRange.from)
-          const toDate = filters.dateRange.to ? new Date(filters.dateRange.to) : fromDate
-          matchesDate = eventDate >= fromDate && eventDate <= toDate
-        }
+        // Map backend data to include missing fields with random/default values
+        const mappedEvents = data.map((event: any) => ({
+          id: event.id,
+          title: event.title || "Untitled Event",
+          description: event.description || "No description available.",
+          date: event.startTime ? event.startTime.split("T")[0] : "2025-01-01", // Extract date from startTime
+          time: event.startTime ? event.startTime.split("T")[1] : "00:00", // Extract time from startTime
+          venue: event.venueId ? `Venue #${event.venueId}` : "Unknown Venue",
+          location: extractStateFromAddress(event.venueAddress || " "), // Default location
+          price: event.price || getRandomValue([0, 50, 100, 150, 200]), // Random price if not provided
+          category: getCategoryLabel(event.eventCategories), 
+          rating: parseFloat((Math.random() * (5 - 3.5) + 3.5).toFixed(1)), // Random rating between 3.5 and 5
+          attendees: getRandomValue([50, 100, 200, 500, 1000]), // Random attendees
+          image: "/placeholder.svg?height=200&width=300", // Default placeholder image
+          featured: Math.random() > 0.5, // Randomly mark as featured
+        }))
 
-        return matchesSearch && matchesCategory && matchesLocation && matchesPrice && matchesDate
-      })
-      .sort((a, b) => {
-        switch (filters.sortBy) {
-          case "price-low":
-            return a.price - b.price
-          case "price-high":
-            return b.price - a.price
-          case "rating":
-            return b.rating - a.rating
-          case "popularity":
-            return b.attendees - a.attendees
-          case "date":
-          default:
-            return new Date(a.date).getTime() - new Date(b.date).getTime()
-        }
-      })
-  }, [filters])
+        setEvents(mappedEvents)
+      } catch (error) {
+        console.error("Failed to fetch events:", error)
+      }
+    }
 
-  const featuredEvents = mockEvents.filter((event) => event.featured)
-  const trendingEvents = mockEvents.sort((a, b) => b.attendees - a.attendees).slice(0, 3)
+    fetchEvents()
+  }, [])
+
+  // Filter and sort events based on user input
+ const filteredEvents = useMemo(() => {
+  return events
+    .filter((event) => {
+      // Ensure all fields have default values
+      const title = event.title || ""
+      const location = event.location || "Unknown Location"
+      const description = event.description || ""
+      const category = event.category || "General"
+      const price = event.price || 0
+      const date = event.date || "1970-01-01"
+
+      // Search Query Match
+      const matchesSearch =
+        title.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
+        location.toLowerCase().includes(filters.searchQuery.toLowerCase()) ||
+        description.toLowerCase().includes(filters.searchQuery.toLowerCase())
+
+      // Category Match
+      const matchesCategory = filters.category === "All" || category === filters.category
+
+      // Location Match
+      const matchesLocation = filters.location === "All" || location === filters.location
+
+      // Price Match
+      const matchesPrice = price >= filters.priceRange[0] && price <= filters.priceRange[1]
+
+      // Date Match
+      let matchesDate = true
+      if (filters.dateRange.from) {
+        const eventDate = new Date(date)
+        const fromDate = new Date(filters.dateRange.from)
+        const toDate = filters.dateRange.to ? new Date(filters.dateRange.to) : fromDate
+        matchesDate = eventDate >= fromDate && eventDate <= toDate
+      }
+
+      // Combine all filters
+      return matchesSearch && matchesCategory && matchesLocation && matchesPrice && matchesDate
+    })
+    .sort((a, b) => {
+      switch (filters.sortBy) {
+        case "price-low":
+          return (a.price || 0) - (b.price || 0)
+        case "price-high":
+          return (b.price || 0) - (a.price || 0)
+        case "rating":
+          return (b.rating || 0) - (a.rating || 0)
+        case "popularity":
+          return (b.attendees || 0) - (a.attendees || 0)
+        case "date":
+        default:
+          return new Date(a.date || "1970-01-01").getTime() - new Date(b.date || "1970-01-01").getTime()
+      }
+    })
+}, [filters, events])
+
+
+  const featuredEvents = events.filter((event) => event.featured)
+  const trendingEvents = events.sort((a, b) => b.attendees - a.attendees).slice(0, 3)
 
   return (
     <div className="min-h-screen bg-background">
@@ -199,7 +155,14 @@ export default function EventsPage() {
 
           {/* Search and Filters */}
           <div className="max-w-4xl mx-auto">
-            <SearchFilters onFiltersChange={setFilters} />
+                <SearchFilters
+                  onFiltersChange={(updatedFilters) => {
+                    setFilters((prevFilters) => ({
+                      ...prevFilters,
+                      ...updatedFilters,
+                    }))
+                  }}
+                />
           </div>
         </div>
       </section>

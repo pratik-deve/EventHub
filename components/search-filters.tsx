@@ -30,12 +30,16 @@ export function SearchFilters({ onFiltersChange }: SearchFiltersProps) {
   const categories = ["All", "Music", "Technology", "Food & Drink", "Arts & Culture", "Sports & Fitness", "Business"]
   const locations = [
     "All",
-    "New York, NY",
-    "San Francisco, CA",
-    "Chicago, IL",
-    "Los Angeles, CA",
-    "Boston, MA",
-    "Miami, FL",
+    "Delhi",
+    "Mumbai",
+    "Bangalore",
+    "Hyderabad",
+    "Chennai",
+    "Kolkata",
+    "Pune",
+    "Ahmedabad",
+    "Jaipur",
+    "Lucknow",
   ]
 
   const handleFilterChange = () => {
