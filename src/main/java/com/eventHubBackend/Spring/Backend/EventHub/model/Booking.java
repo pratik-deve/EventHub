@@ -1,6 +1,6 @@
 package com.eventHubBackend.Spring.Backend.EventHub.model;
 
-import com.eventHubBackend.Spring.Backend.EventHub.model.status.BookingStatus;
+import com.eventHubBackend.Spring.Backend.EventHub.model.enums.BookingStatus;
 import jakarta.persistence.*;
 import lombok.*;
 

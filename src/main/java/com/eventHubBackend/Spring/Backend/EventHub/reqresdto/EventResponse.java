@@ -1,5 +1,6 @@
 package com.eventHubBackend.Spring.Backend.EventHub.reqresdto;
 
+import com.eventHubBackend.Spring.Backend.EventHub.model.enums.EventCategories;
 import lombok.*;
 
 import java.time.LocalDateTime;
@@ -14,6 +15,7 @@ public class EventResponse {
     private String description;
     private LocalDateTime startTime;
     private LocalDateTime endTime;
-    private Long venueId;
+    private String venueAddress;
+    private EventCategories eventCategories;
 }
 

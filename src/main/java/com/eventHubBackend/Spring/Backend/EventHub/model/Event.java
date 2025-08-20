@@ -1,11 +1,15 @@
 package com.eventHubBackend.Spring.Backend.EventHub.model;
 
+import com.eventHubBackend.Spring.Backend.EventHub.model.enums.BookingStatus;
+import com.eventHubBackend.Spring.Backend.EventHub.model.enums.EventCategories;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.List;
+
+
 
 @Entity
 @Table(
@@ -26,6 +30,9 @@ public class Event {
     @Column(length = 500)
     private String description;
 
+    @Column(nullable = false)
+    private double price;
+
     @Column(name = "start_time", nullable = false)
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd'T'HH:mm:ss")
     private LocalDateTime startTime;
@@ -40,4 +47,10 @@ public class Event {
 
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Booking> bookings;
+
+
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private EventCategories eventCategory = EventCategories.GENERAL;
 }

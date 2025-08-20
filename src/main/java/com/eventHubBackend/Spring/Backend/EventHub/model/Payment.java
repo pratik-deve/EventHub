@@ -1,7 +1,7 @@
 package com.eventHubBackend.Spring.Backend.EventHub.model;
 
-import com.eventHubBackend.Spring.Backend.EventHub.model.status.PaymentMethod;
-import com.eventHubBackend.Spring.Backend.EventHub.model.status.PaymentStatus;
+import com.eventHubBackend.Spring.Backend.EventHub.model.enums.PaymentMethod;
+import com.eventHubBackend.Spring.Backend.EventHub.model.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
 

@@ -1,6 +1,6 @@
 package com.eventHubBackend.Spring.Backend.EventHub.model;
 
-import com.eventHubBackend.Spring.Backend.EventHub.model.status.Role;
+import com.eventHubBackend.Spring.Backend.EventHub.model.enums.Role;
 import jakarta.persistence.*;
 
 import lombok.AllArgsConstructor;

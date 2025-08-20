@@ -98,13 +98,15 @@ public class EventService {
     }
 
     private EventResponse mapToResponse(Event event) {
+
         return new EventResponse(
                 event.getId(),
                 event.getTitle(),
                 event.getDescription(),
                 event.getStartTime(),
                 event.getEndTime(),
-                event.getVenue().getId()
+                event.getVenue().getAddress(),
+                event.getEventCategory()
         );
     }
 }
