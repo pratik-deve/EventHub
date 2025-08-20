@@ -78,7 +78,7 @@ export function EventCard({ event }: EventCardProps) {
           <Button
             variant="secondary"
             size="icon"
-            className="h-8 w-8 bg-background/90 backdrop-blur-sm hover:bg-background"
+            className="h-8 w-8 bg-background/80 backdrop-blur-sm hover:bg-background/90 border border-muted text-muted-foreground hover:text-primary"
             onClick={handleFavorite}
           >
             <Heart className={`h-4 w-4 ${isFavorited ? "fill-red-500 text-red-500" : ""}`} />
@@ -86,7 +86,7 @@ export function EventCard({ event }: EventCardProps) {
           <Button
             variant="secondary"
             size="icon"
-            className="h-8 w-8 bg-background/90 backdrop-blur-sm hover:bg-background"
+            className="h-8 w-8 bg-background/80 backdrop-blur-sm hover:bg-background/90 border border-muted text-muted-foreground hover:text-primary"
             onClick={handleShare}
           >
             <Share2 className="h-4 w-4" />

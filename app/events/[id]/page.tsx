@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Navbar } from "@/components/navbar"
 import { Button } from "@/components/ui/button"
@@ -13,48 +13,110 @@ import { useToast } from "@/hooks/use-toast"
 import { Calendar, MapPin, Clock, Star, Users, Share2, Heart, ArrowLeft, Ticket, CreditCard } from "lucide-react"
 import Link from "next/link"
 
-// Mock event data (in real app, this would come from API)
-const mockEvent = {
-  id: "1",
-  title: "Summer Music Festival 2024",
-  description:
-    "Join us for an unforgettable night of music featuring top artists from around the world. Experience live performances, food trucks, and an amazing atmosphere under the stars.",
-  longDescription:
-    "The Summer Music Festival 2024 promises to be the event of the year! Featuring headliners from multiple genres including rock, pop, electronic, and indie music. Our festival spans across three stages with continuous performances from 6 PM to midnight. Food vendors will offer everything from gourmet burgers to vegan options, and our craft beer garden will feature local breweries. VIP packages include backstage access and premium seating areas.",
-  date: "2024-07-15",
-  time: "18:00",
-  endTime: "00:00",
-  venue: "Central Park Amphitheater",
-  location: "New York, NY",
-  address: "1234 Central Park West, New York, NY 10025",
-  price: 89,
-  category: "Music",
-  rating: 4.8,
-  attendees: 2500,
-  maxCapacity: 3000,
-  image: "/placeholder.svg?height=400&width=800",
-  organizer: "NYC Events Co.",
-  tags: ["Music", "Festival", "Outdoor", "Food & Drinks"],
-  lineup: ["The Electric Waves", "Midnight Serenade", "DJ Cosmic", "Indie Collective"],
-}
+// Utility function to extract state from venueAddress
+const extractStateFromAddress = (address: string): string => {
+  const indianStates = [
+    "Andhra Pradesh",
+    "Arunachal Pradesh",
+    "Assam",
+    "Bihar",
+    "Chhattisgarh",
+    "Goa",
+    "Gujarat",
+    "Haryana",
+    "Himachal Pradesh",
+    "Jharkhand",
+    "Karnataka",
+    "Kerala",
+    "Madhya Pradesh",
+    "Maharashtra",
+    "Manipur",
+    "Meghalaya",
+    "Mizoram",
+    "Nagaland",
+    "Odisha",
+    "Punjab",
+    "Rajasthan",
+    "Sikkim",
+    "Tamil Nadu",
+    "Telangana",
+    "Tripura",
+    "Uttar Pradesh",
+    "Uttarakhand",
+    "West Bengal",
+    "Delhi",
+    "Jammu and Kashmir",
+    "Ladakh",
+    "Puducherry",
+    "Chandigarh",
+  ]
 
-// Mock seat data
-const seatSections = [
-  { id: "vip", name: "VIP Section", price: 150, available: 45, total: 50, color: "bg-accent" },
-  { id: "premium", name: "Premium", price: 120, available: 120, total: 150, color: "bg-secondary" },
-  { id: "general", name: "General Admission", price: 89, available: 800, total: 1000, color: "bg-primary" },
-  { id: "lawn", name: "Lawn Seating", price: 65, available: 1500, total: 1800, color: "bg-muted" },
-]
+  for (const state of indianStates) {
+    if (address.toLowerCase().includes(state.toLowerCase())) {
+      return state
+    }
+  }
+  return "Unknown Location"
+}
 
 export default function EventDetailsPage() {
   const params = useParams()
   const router = useRouter()
   const { user } = useAuth()
   const { toast } = useToast()
+  const [event, setEvent] = useState<any | null>(null) // State to store the fetched event
+  const [isLoading, setIsLoading] = useState(true)
   const [selectedSection, setSelectedSection] = useState<string | null>(null)
   const [ticketQuantity, setTicketQuantity] = useState(1)
   const [isBooking, setIsBooking] = useState(false)
   const [isFavorited, setIsFavorited] = useState(false)
+
+  // Fetch event details from the backend
+  useEffect(() => {
+    const fetchEvent = async () => {
+      try {
+        const response = await fetch(`http://localhost:8080/api/events/${params.id}`)
+        if (!response.ok) {
+          throw new Error("Failed to fetch event details")
+        }
+        const data = await response.json()
+
+        // Process the response to extract or set default values
+        const processedEvent = {
+          id: data.id,
+          title: data.title || "Untitled Event",
+          description: data.description || "No description available.",
+          startTime: data.startTime || "2025-01-01T00:00",
+          endTime: data.endTime || "2025-01-01T01:00",
+          venueAddress: data.venueAddress || "Unknown Address",
+          location: extractStateFromAddress(data.venueAddress || ""),
+          category: data.eventCategories || "General",
+          image: "/placeholder.svg", // Default placeholder image
+          rating: Math.random() * (5 - 3.5) + 3.5, // Random rating between 3.5 and 5
+          attendees: Math.floor(Math.random() * 500) + 50, // Random attendees between 50 and 500
+          organizer: "Unknown Organizer", // Default organizer
+          maxCapacity: 1000, // Default capacity
+          longDescription: data.description || "No additional details available.",
+          seatSections: [], // Default empty seat sections
+          tags: [data.eventCategories], // Use category as a tag
+        }
+
+        setEvent(processedEvent)
+      } catch (error) {
+        console.error("Error fetching event:", error)
+        toast({
+          title: "Error",
+          description: "Failed to load event details. Please try again later.",
+          variant: "destructive",
+        })
+        router.push("/events") // Redirect to events list if fetching fails
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchEvent()
+  }, [params.id, router, toast])
 
   const handleFavorite = () => {
     setIsFavorited(!isFavorited)
@@ -69,8 +131,8 @@ export default function EventDetailsPage() {
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
-        title: mockEvent.title,
-        text: mockEvent.description,
+        title: event?.title,
+        text: event?.description,
         url: window.location.href,
       })
     } else {
@@ -124,8 +186,20 @@ export default function EventDetailsPage() {
     }
   }
 
-  const selectedSectionData = seatSections.find((section) => section.id === selectedSection)
+  const selectedSectionData = event?.seatSections?.find((section: any) => section.id === selectedSection)
   const totalPrice = selectedSectionData ? selectedSectionData.price * ticketQuantity : 0
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    )
+  }
+
+  if (!event) {
+    return null // Render nothing if the event is not available
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -145,8 +219,8 @@ export default function EventDetailsPage() {
       <section className="relative">
         <div className="aspect-video md:aspect-[3/1] overflow-hidden">
           <img
-            src={mockEvent.image || "/placeholder.svg"}
-            alt={mockEvent.title}
+            src={event.image || "/placeholder.svg"}
+            alt={event.title}
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
@@ -155,17 +229,17 @@ export default function EventDetailsPage() {
         <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
           <div className="container mx-auto">
             <div className="flex flex-wrap gap-2 mb-4">
-              {mockEvent.tags.map((tag) => (
+              {event.tags?.map((tag: string) => (
                 <Badge key={tag} variant="secondary" className="bg-white/20 text-white border-white/30">
                   {tag}
                 </Badge>
               ))}
             </div>
-            <h1 className="text-3xl md:text-5xl font-serif font-bold mb-4">{mockEvent.title}</h1>
+            <h1 className="text-3xl md:text-5xl font-serif font-bold mb-4">{event.title}</h1>
             <div className="flex flex-wrap items-center gap-6 text-lg">
               <div className="flex items-center gap-2">
                 <Calendar className="w-5 h-5" />
-                {new Date(mockEvent.date).toLocaleDateString("en-US", {
+                {new Date(event.startTime).toLocaleDateString("en-US", {
                   weekday: "long",
                   year: "numeric",
                   month: "long",
@@ -174,16 +248,18 @@ export default function EventDetailsPage() {
               </div>
               <div className="flex items-center gap-2">
                 <Clock className="w-5 h-5" />
-                {mockEvent.time} - {mockEvent.endTime}
+                {new Date(event.startTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} -{" "}
+                {new Date(event.endTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="w-5 h-5" />
-                {mockEvent.location}
+                {event.location}
               </div>
             </div>
           </div>
         </div>
       </section>
+
 
       <div className="container mx-auto px-4 py-8">
         <div className="grid lg:grid-cols-3 gap-8">
@@ -196,11 +272,11 @@ export default function EventDetailsPage() {
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-1">
                       <Star className="w-5 h-5 fill-yellow-400 text-yellow-400" />
-                      <span className="font-semibold text-lg">{mockEvent.rating}</span>
+                      <span className="font-semibold text-lg">{event.rating}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Users className="w-5 h-5 text-muted-foreground" />
-                      <span>{mockEvent.attendees} attending</span>
+                      <span>{event.attendees} attending</span>
                     </div>
                   </div>
                   <div className="flex gap-2">
@@ -219,7 +295,7 @@ export default function EventDetailsPage() {
                 </div>
 
                 <h2 className="text-2xl font-serif font-semibold mb-4">About This Event</h2>
-                <p className="text-muted-foreground leading-relaxed mb-6">{mockEvent.longDescription}</p>
+                <p className="text-muted-foreground leading-relaxed mb-6">{event.longDescription}</p>
 
                 <Separator className="my-6" />
 
@@ -229,19 +305,19 @@ export default function EventDetailsPage() {
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Organizer:</span>
-                        <span>{mockEvent.organizer}</span>
+                        <span>{event.organizer}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Venue:</span>
-                        <span>{mockEvent.venue}</span>
+                        <span>{event.venue}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Address:</span>
-                        <span className="text-right">{mockEvent.address}</span>
+                        <span className="text-right">{event.address}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Capacity:</span>
-                        <span>{mockEvent.maxCapacity} people</span>
+                        <span>{event.maxCapacity} people</span>
                       </div>
                     </div>
                   </div>
@@ -249,7 +325,7 @@ export default function EventDetailsPage() {
                   <div>
                     <h3 className="font-semibold mb-3">Lineup</h3>
                     <div className="space-y-2">
-                      {mockEvent.lineup.map((artist, index) => (
+                      {event.lineup?.map((artist: string) => (
                         <div key={artist} className="flex items-center gap-2">
                           <div className="w-2 h-2 bg-primary rounded-full" />
                           <span className="text-sm">{artist}</span>
@@ -263,7 +339,7 @@ export default function EventDetailsPage() {
 
             {/* Seat Selection */}
             <SeatSelection
-              sections={seatSections}
+              sections={event.seatSections || []}
               onSectionSelect={setSelectedSection}
               selectedSection={selectedSection}
             />

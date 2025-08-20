@@ -79,7 +79,8 @@ export default function EventsPage() {
     fetchEvents()
   }, [])
 
-  // Filter and sort events based on user input
+
+
  const filteredEvents = useMemo(() => {
   return events
     .filter((event) => {
@@ -101,7 +102,7 @@ export default function EventsPage() {
       const matchesCategory = filters.category === "All" || category === filters.category
 
       // Location Match
-      const matchesLocation = filters.location === "All" || location === filters.location
+      const matchesLocation = filters.location === "All" || location.toLowerCase() === filters.location.toLowerCase()
 
       // Price Match
       const matchesPrice = price >= filters.priceRange[0] && price <= filters.priceRange[1]
@@ -135,7 +136,6 @@ export default function EventsPage() {
     })
 }, [filters, events])
 
-
   const featuredEvents = events.filter((event) => event.featured)
   const trendingEvents = events.sort((a, b) => b.attendees - a.attendees).slice(0, 3)
 
@@ -157,10 +157,7 @@ export default function EventsPage() {
           <div className="max-w-4xl mx-auto">
                 <SearchFilters
                   onFiltersChange={(updatedFilters) => {
-                    setFilters((prevFilters) => ({
-                      ...prevFilters,
-                      ...updatedFilters,
-                    }))
+                    setFilters(updatedFilters)
                   }}
                 />
           </div>

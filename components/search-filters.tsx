@@ -13,6 +13,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { Slider } from "@/components/ui/slider"
 import { Search, Filter, CalendarIcon, MapPin, DollarSign, X } from "lucide-react"
 import { format } from "date-fns"
+import { indianStates } from "@/public/constants/constants"
 
 interface SearchFiltersProps {
   onFiltersChange: (filters: any) => void
@@ -28,31 +29,19 @@ export function SearchFilters({ onFiltersChange }: SearchFiltersProps) {
   const [showAdvanced, setShowAdvanced] = useState(false)
 
   const categories = ["All", "Music", "Technology", "Food & Drink", "Arts & Culture", "Sports & Fitness", "Business"]
-  const locations = [
-    "All",
-    "Delhi",
-    "Mumbai",
-    "Bangalore",
-    "Hyderabad",
-    "Chennai",
-    "Kolkata",
-    "Pune",
-    "Ahmedabad",
-    "Jaipur",
-    "Lucknow",
-  ]
+  const locations = indianStates; 
 
   const handleFilterChange = () => {
-    const filters = {
-      searchQuery,
-      category: selectedCategory,
-      location: selectedLocation,
-      dateRange,
-      priceRange,
-      sortBy,
-    }
-    onFiltersChange(filters)
+  const filters = {
+    searchQuery,
+    category: selectedCategory,
+    location: selectedLocation,
+    dateRange,
+    priceRange,
+    sortBy,
   }
+  onFiltersChange(filters) // Send the updated filters to the parent component
+}
 
   const clearFilters = () => {
     setSearchQuery("")
@@ -72,11 +61,12 @@ export function SearchFilters({ onFiltersChange }: SearchFiltersProps) {
   }
 
   // Call handleFilterChange whenever any filter changes
-  React.useEffect(() => {
-    handleFilterChange()
-  }, [searchQuery, selectedCategory, selectedLocation, dateRange, priceRange, sortBy])
+    React.useEffect(() => {
+      handleFilterChange()
+    }, [searchQuery, selectedCategory, selectedLocation, dateRange, priceRange, sortBy])
 
-  return (
+
+return (
     <div className="space-y-4">
       {/* Main Search Bar */}
       <div className="relative">

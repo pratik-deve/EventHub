@@ -1,5 +1,6 @@
 "use client"
 
+import { getUserProfile } from "@/api/userApi"
 import type React from "react"
 import { createContext, useContext, useEffect, useState } from "react"
 
@@ -33,25 +34,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Check for existing session on mount
-    const checkAuth = async () => {
-      try {
-        const token = localStorage.getItem("auth_token")
-        if (token) {
-          // In a real app, validate token with backend
-          const userData = localStorage.getItem("user_data")
-          if (userData) {
-            setUser(JSON.parse(userData))
-          }
-        }
-      } catch (error) {
-        console.error("Auth check failed:", error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
+      const checkAuth = async () => {
+        try {
+          const token = sessionStorage.getItem("auth_token");
+          if (token) {
+            
+           const res = await getUserProfile();
 
-    checkAuth()
-  }, [])
+            if (res.ok) {
+              const userData = await res.json();
+              const user: User = {
+                name: userData.username,
+                email: userData.email,
+                avatar: "/placeholder.svg?height=40&width=40",
+                isOrganizer: userData.role?.some((r: { authority: string }) => r.authority === "ORGANIZER") || false,
+                subscriptionStatus: "none", // you can map from backend if available
+              };
+              setUser(user);
+            } else {
+              // Token invalid → clear session
+              sessionStorage.removeItem("auth_token");
+              setUser(null);
+            }
+          }
+        } catch (error) {
+          console.error("Auth check failed:", error);
+          sessionStorage.removeItem("auth_token");
+          setUser(null);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      checkAuth();
+    }, []);
 
   const signIn = async (login: string, password: string) => {
     setIsLoading(true)
@@ -79,10 +95,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         subscriptionStatus: "none",
       }
 
-      // Store auth data
-      localStorage.setItem("auth_token", "authToken")
-      localStorage.setItem("user_data", JSON.stringify(userData))
-      setUser(userData)
+      
+
+        sessionStorage.setItem("auth_token", data.authToken);
+
+        // user info only in Redux/Context
+        setUser(userData);
     } catch (error) {
       throw new Error("Invalid credentials")
     } finally {
@@ -106,6 +124,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }),
       })
 
+
+      const data = await response.json(); 
       // Mock user data
       const userData: User = {
     
@@ -117,9 +137,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
 
       // Store auth data
-      localStorage.setItem("auth_token", "authToken")
-      localStorage.setItem("user_data", JSON.stringify(userData))
-      setUser(userData)
+      sessionStorage.setItem("auth_token", data.authToken);
+
+        // user info only in Redux/Context
+        setUser(userData);
     } catch (error) {
       throw new Error("Registration failed")
     } finally {
@@ -143,9 +164,9 @@ const signInWithGoogle = (): Promise<any> => {
         if (event.origin !== window.location.origin) return; // security check
 
         if (event.data.type === "OAUTH_LOGIN_SUCCESS") {
-          localStorage.setItem("auth_token", event.data.token as string);
-          localStorage.setItem("user_data", JSON.stringify(event.data.user));
-          setUser(event.data.user);
+
+           sessionStorage.setItem("auth_token", event.data.token as string);
+           setUser(event.data.user);
 
           window.removeEventListener("message", listener);
           popup?.close();
