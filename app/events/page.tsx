@@ -50,7 +50,7 @@ export default function EventsPage() {
   useEffect(() => {
     const fetchEvents = async () => {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/events/public`)
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/events`)
         const data = await response.json()
 
         // Map backend data to include missing fields with random/default values

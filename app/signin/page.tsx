@@ -90,7 +90,7 @@ export default function SignInPage() {
                   <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="login"
-                    type="email"
+                    type="username"
                     placeholder="Enter your email or username"
                     value={login}
                     onChange={(e) => setLogin(e.target.value)}
