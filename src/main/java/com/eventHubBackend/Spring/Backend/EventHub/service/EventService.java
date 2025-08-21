@@ -11,7 +11,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -95,6 +98,16 @@ public class EventService {
             throw new ResourceNotFoundException("Event not found with id: " + id);
         }
         eventRepository.deleteById(id);
+    }
+
+
+    public List<EventResponse> getEventsByIds(Set<Long> eventIds) {
+
+        return eventIds.stream()
+                .map(eventRepository::findById)
+                .flatMap(Optional::stream)
+                .map(this::mapToResponse)
+                .toList();
     }
 
     private EventResponse mapToResponse(Event event) {

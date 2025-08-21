@@ -23,7 +23,7 @@ public class EventController {
         return ResponseEntity.ok(eventService.createEvent(request));
     }
 
-    @GetMapping("/public")
+    @GetMapping
     public ResponseEntity<List<EventResponse>> getAllEvents() {
 
         return ResponseEntity.ok(eventService.getAllEvents());

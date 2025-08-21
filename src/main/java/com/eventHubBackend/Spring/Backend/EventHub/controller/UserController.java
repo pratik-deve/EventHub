@@ -2,11 +2,14 @@ package com.eventHubBackend.Spring.Backend.EventHub.controller;
 
 
 
+import com.eventHubBackend.Spring.Backend.EventHub.model.Event;
+import com.eventHubBackend.Spring.Backend.EventHub.reqresdto.EventResponse;
 import com.eventHubBackend.Spring.Backend.EventHub.reqresdto.LoginRequest;
 import com.eventHubBackend.Spring.Backend.EventHub.jwt.JwtService;
 import com.eventHubBackend.Spring.Backend.EventHub.model.User;
 import com.eventHubBackend.Spring.Backend.EventHub.principles.UserPrinciple;
 import com.eventHubBackend.Spring.Backend.EventHub.reqresdto.UserResponse;
+import com.eventHubBackend.Spring.Backend.EventHub.service.EventService;
 import com.eventHubBackend.Spring.Backend.EventHub.service.EventUserDetailsService;
 import com.eventHubBackend.Spring.Backend.EventHub.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -16,7 +19,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,7 +31,10 @@ import java.util.Map;
 public class UserController {
 
     @Autowired
-    UserService service;
+    UserService userService;
+
+    @Autowired
+    EventService eventService;
 
     @Autowired
      JwtService jwtService;
@@ -63,7 +68,7 @@ public class UserController {
 
     @PostMapping("/signup")
     public User signUp(@RequestBody User user){
-        service.saveUser(user);
+        userService.saveUser(user);
         return user;
     }
 
@@ -133,9 +138,36 @@ public class UserController {
 
     @GetMapping("/getUsers")
     public ResponseEntity<Map<String, Object>> getUsers(){
-        List<User> users = service.getUsers();
+        List<User> users = userService.getUsers();
         Map<String, Object> mp = new HashMap<>();
         mp.put("Users", users);
         return new ResponseEntity<>(mp, HttpStatus.ACCEPTED);
     }
+
+
+    @PostMapping("/liked/{id}")
+    public ResponseEntity<Map<String, Object>> likedEvent(@PathVariable Long id) {
+        userService.addEvent(id);
+        Map<String, Object> mp = new HashMap<>();
+        mp.put("Event", eventService.getEventById(id));
+        return new ResponseEntity<>(mp, HttpStatus.ACCEPTED);
+    }
+
+    @DeleteMapping("/unliked/{id}")
+    public ResponseEntity<Map<String, Object>> unlikedEvent(@PathVariable Long id) {
+        userService.removeEvent(id);
+        Map<String, Object> mp = new HashMap<>();
+        mp.put("Event", eventService.getEventById(id));
+        return new ResponseEntity<>(mp, HttpStatus.ACCEPTED);
+    }
+
+    @GetMapping("/liked")
+    public ResponseEntity<Map<String, Object>> getLikedEvents() {
+        List<EventResponse> likedEvents = userService.getLikedEvents();
+        Map<String, Object> response = new HashMap<>();
+        response.put("likedEvents", likedEvents);
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+
+
 }
