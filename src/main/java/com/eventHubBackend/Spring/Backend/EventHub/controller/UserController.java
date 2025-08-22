@@ -57,14 +57,7 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
         }
 
-        UserResponse userResponse = UserResponse.builder()
-                .username(userDetails.getUsername())
-                .email(userDetails.getEmail())
-                .roles(userDetails.getAuthorities())
-                .fullname(userDetails.getFullname())
-                .profilePicUrl(userDetails.getProfilePicUrl())
-                .build();
-
+        UserResponse userResponse = userService.getUserResponse(userDetails.getUsername());
         return ResponseEntity.ok(userResponse);
     }
 
@@ -93,9 +86,8 @@ public class UserController {
 
         if (authentication.isAuthenticated()) {
             UserPrinciple userDetails = (UserPrinciple) authentication.getPrincipal();
-            response.put("username", userDetails.getUsername());
-            response.put("email", userDetails.getEmail());
-            response.put("role", userDetails.getAuthorities());
+            UserResponse userResponse = userService.getUserResponse(userDetails.getUsername());
+            response.put("user", userResponse);
             response.put("authToken", jwtService.generateToken(userDetails.getUsername()));
             response.put("Msg", "Logged In Successfully!!");
         } else {
@@ -104,6 +96,7 @@ public class UserController {
 
         return new ResponseEntity<>(response, HttpStatus.ACCEPTED);
     }
+
 
     /**
      * OAuth2 Success Handler

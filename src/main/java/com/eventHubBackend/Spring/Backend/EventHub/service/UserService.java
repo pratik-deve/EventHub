@@ -1,8 +1,10 @@
 package com.eventHubBackend.Spring.Backend.EventHub.service;
 
 import com.eventHubBackend.Spring.Backend.EventHub.model.User;
+import com.eventHubBackend.Spring.Backend.EventHub.principles.UserPrinciple;
 import com.eventHubBackend.Spring.Backend.EventHub.repository.UserRepo;
 import com.eventHubBackend.Spring.Backend.EventHub.reqresdto.EventResponse;
+import com.eventHubBackend.Spring.Backend.EventHub.reqresdto.UserResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -65,5 +67,18 @@ public class UserService {
     public String getUserImage(String username) {
         User user = repo.findByUsername(username);
         return user.getProfilePicUrl();
+    }
+
+    public  UserResponse getUserResponse(String username) {
+
+        User userDetails = repo.findByUsername(username);
+
+        return UserResponse.builder()
+                .username(userDetails.getUsername())
+                .email(userDetails.getEmail())
+                .roles(userDetails.getRole())
+                .fullname(userDetails.getFullname())
+                .profilePicUrl(userDetails.getProfilePicUrl())
+                .build();
     }
 }
