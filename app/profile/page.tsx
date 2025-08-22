@@ -15,6 +15,10 @@ import { useToast } from "@/hooks/use-toast"
 import { ModeToggle } from "@/components/mode-toggle"
 import { User, Mail, Lock, Camera, Save, Crown, Calendar, ArrowRight } from "lucide-react"
 import Link from "next/link"
+import axios from "axios"
+import { updateUserProfilePic } from "@/api/userApi"
+import { set } from "date-fns"
+import api from "@/api/axiosInstance"
 
 export default function ProfilePage() {
   const { user } = useAuth()
@@ -24,11 +28,66 @@ export default function ProfilePage() {
   const [isSaving, setIsSaving] = useState(false)
 
   // Form states
+
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [name, setName] = useState(user?.name || "")
+  const [username, setUsername] = useState(user?.name || "") // Initially set to the same as full name
   const [email, setEmail] = useState(user?.email || "")
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [isSelectingFile, setIsSelectingFile] = useState(false)
+
+  const {setUserProfilePic} = useAuth()
+
+  const handleUpload = async() => {
+
+     if(!selectedFile) {
+      toast({
+        title: "No file selected",
+        description: "Please select a file to upload.",
+        variant: "destructive",
+      })
+      return }
+
+    const formData = new FormData()
+    formData.append("file", selectedFile)
+
+    try {
+        
+      
+
+      const data = await updateUserProfilePic(formData); 
+        if(!data.imgUrl){
+          toast({
+            title: "Upload failed",
+            description: "Please try again  .",
+            variant: "destructive",
+          })
+          return;
+        }
+
+        await setUserProfilePic(data.imgUrl); // Assuming this function updates the user context
+
+        toast({
+          title: "Upload successful",
+          description: "Your profile picture has been updated.",
+        });
+        setIsSelectingFile(false); 
+        setSelectedFile(null); // Reset file selection
+        
+      } catch (err) {
+        toast({
+          title: "Upload failed",
+          description: "Please try again later.",
+          variant: "destructive",
+        })
+    }
+      
+      
+  }
+
+
 
   const handleSaveProfile = async () => {
     setIsSaving(true)
@@ -137,10 +196,40 @@ export default function ProfilePage() {
                       <AvatarImage src={user?.avatar || "/placeholder.svg"} alt={user?.name} />
                       <AvatarFallback className="text-2xl">{user?.name?.charAt(0)}</AvatarFallback>
                     </Avatar>
-                    <Button variant="outline" size="sm">
-                      <Camera className="w-4 h-4 mr-2" />
-                      Change Photo
-                    </Button>
+
+                    {!isSelectingFile ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsSelectingFile(true)} // Show file input on click
+                      >
+                        <Camera className="w-4 h-4 mr-2" />
+                        Change Photo
+                      </Button>
+                    ) : (
+                      <div className="space-y-4">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
+                        />
+                        <div className="flex gap-2">
+                          <Button onClick={handleUpload}>
+                            <Save className="w-4 h-4 mr-2" />
+                            Upload
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => {
+                              setIsSelectingFile(false)
+                              setSelectedFile(null) // Reset file selection
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <Separator />
@@ -224,6 +313,7 @@ export default function ProfilePage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="grid md:grid-cols-2 gap-4">
+                    {/* Full Name Field */}
                     <div className="space-y-2">
                       <Label htmlFor="name">Full Name</Label>
                       <div className="relative">
@@ -238,6 +328,22 @@ export default function ProfilePage() {
                       </div>
                     </div>
 
+                    {/* Username Field */}
+                    <div className="space-y-2">
+                      <Label htmlFor="username">Username</Label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          id="username"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          disabled={!isEditing}
+                          className="pl-10"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Email Address Field */}
                     <div className="space-y-2">
                       <Label htmlFor="email">Email Address</Label>
                       <div className="relative">

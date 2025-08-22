@@ -14,7 +14,7 @@ import { Calendar, Eye, EyeOff, Mail, Lock, User } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 export default function SignUpPage() {
-  const [name, setName] = useState("")
+  const [username, setUsername] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -49,7 +49,7 @@ export default function SignUpPage() {
     setIsLoading(true)
 
     try {
-      await signUp(name, email, password)
+      await signUp(username, email, password)
       toast({
         title: "Account created!",
         description: "Welcome to EventHub! Your account has been created successfully.",
@@ -104,15 +104,15 @@ export default function SignUpPage() {
           <CardContent className="space-y-6">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="name">Username</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
-                    id="name"
+                    id="username"
                     type="text"
-                    placeholder="Enter your full name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Enter your username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                     className="pl-10"
                     required
                   />

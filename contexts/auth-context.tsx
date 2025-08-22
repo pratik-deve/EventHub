@@ -8,6 +8,7 @@ interface User {
 
   name: string
   email: string
+  username: string
   avatar?: string
   isOrganizer: boolean
   subscriptionStatus: "none" | "trial" | "monthly" | "yearly"
@@ -18,8 +19,9 @@ interface User {
 interface AuthContextType {
   user: User | null
   isLoading: boolean
+  setUserProfilePic: (url: string) => Promise<void>
   signIn: (login: string, password: string) => Promise<void>
-  signUp: (name: string, email: string, password: string) => Promise<void>
+  signUp: (username: string, email: string, password: string) => Promise<void>
   signOut: () => void
   signInWithGoogle: () => Promise<void>
   becomeOrganizer: (plan: "trial" | "monthly" | "yearly") => Promise<void>
@@ -44,10 +46,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             if (res.ok) {
               const userData = await res.json();
               const user: User = {
-                name: userData.username,
-                email: userData.email,
-                avatar: "/placeholder.svg?height=40&width=40",
-                isOrganizer: userData.role?.some((r: { authority: string }) => r.authority === "ORGANIZER") || false,
+                name: userData.user.username,
+                email: userData.user.email,
+                username: userData.user.username,
+                avatar: userData.user.profilePicUrl,
+                isOrganizer: userData.user.role?.some((r: { authority: string }) => r.authority === "ORGANIZER") || false,
                 subscriptionStatus: "none", // you can map from backend if available
               };
               setUser(user);
@@ -88,10 +91,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await response.json()
       
       const userData: User = {
-        name: data.username,
-        email: data.email,
-        avatar: "/placeholder.svg?height=40&width=40",
-        isOrganizer: data.role?.some((r: { authority: string }) => r.authority === "ORGANIZER") || false,
+        name: data.user.username,
+        username: data.user.username,
+        email: data.user.email,
+        avatar: data.user.profilePicUrl,
+        isOrganizer: data.user.role?.some((r: { authority: string }) => r.authority === "ORGANIZER") || false,
         subscriptionStatus: "none",
       }
 
@@ -108,7 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
-  const signUp = async (name: string, email: string, password: string) => {
+  const signUp = async (username: string, email: string, password: string) => {
     setIsLoading(true)
     try {
       // Simulate API call
@@ -118,7 +122,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          username: name,
+          username,
           email,
           password,
         }),
@@ -129,7 +133,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Mock user data
       const userData: User = {
     
-        name: name,
+        name: username,
+        username: username,
         email: email,
         avatar: "/placeholder.svg?height=40&width=40",
         isOrganizer: false,
@@ -183,6 +188,14 @@ const signInWithGoogle = (): Promise<any> => {
   });
 };
 
+
+  const setUserProfilePic = (url: string) => {
+    if (user) {
+      const updatedUser = { ...user, avatar: url }
+      setUser(updatedUser)
+      localStorage.setItem("user_data", JSON.stringify(updatedUser))
+    }
+  }
 
 
   const becomeOrganizer = async (plan: "trial" | "monthly" | "yearly") => {
@@ -253,6 +266,7 @@ const signInWithGoogle = (): Promise<any> => {
         signInWithGoogle,
         becomeOrganizer,
         updateSubscription,
+        setUserProfilePic
       }}
     >
       {children}
