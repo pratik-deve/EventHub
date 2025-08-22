@@ -7,9 +7,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -26,11 +24,17 @@ public class User {
     @Column(nullable = false, unique = true, length = 50)
     private String username;
 
+    @Column
+    private String fullname;
+
     @Column(nullable = false)
     private String password;
 
     @Column(nullable = false, unique = true, length = 100)
     private String email;
+
+    @Column
+    private String profilePicUrl;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -41,6 +45,16 @@ public class User {
     @CollectionTable(name = "user_liked_events", joinColumns = @JoinColumn(name = "user_id"))
     @Column(name = "event_id")
     private Set<Long> likedEventId = new HashSet<>();
+
+
+
+
+    @PrePersist
+    public void setDefaultFullName() {
+        if (fullname == null || fullname.isEmpty()) {
+            fullname = username;
+        }
+    }
 
 
 }

@@ -56,4 +56,12 @@ public class UserPrinciple implements UserDetails {
     public boolean isEnabled() {
         return UserDetails.super.isEnabled();
     }
+
+    public String getFullname() {
+       return user.getFullname();
+    }
+
+    public String getProfilePicUrl() {
+       return user.getProfilePicUrl();
+    }
 }

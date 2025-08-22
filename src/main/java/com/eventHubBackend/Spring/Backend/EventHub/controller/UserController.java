@@ -1,16 +1,14 @@
 package com.eventHubBackend.Spring.Backend.EventHub.controller;
 
-
-
-import com.eventHubBackend.Spring.Backend.EventHub.model.Event;
-import com.eventHubBackend.Spring.Backend.EventHub.reqresdto.EventResponse;
-import com.eventHubBackend.Spring.Backend.EventHub.reqresdto.LoginRequest;
 import com.eventHubBackend.Spring.Backend.EventHub.jwt.JwtService;
 import com.eventHubBackend.Spring.Backend.EventHub.model.User;
 import com.eventHubBackend.Spring.Backend.EventHub.principles.UserPrinciple;
+import com.eventHubBackend.Spring.Backend.EventHub.reqresdto.EventResponse;
+import com.eventHubBackend.Spring.Backend.EventHub.reqresdto.LoginRequest;
 import com.eventHubBackend.Spring.Backend.EventHub.reqresdto.UserResponse;
 import com.eventHubBackend.Spring.Backend.EventHub.service.EventService;
 import com.eventHubBackend.Spring.Backend.EventHub.service.EventUserDetailsService;
+import com.eventHubBackend.Spring.Backend.EventHub.service.ImageUploadService;
 import com.eventHubBackend.Spring.Backend.EventHub.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,8 +17,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.HashMap;
 import java.util.List;
@@ -37,7 +37,7 @@ public class UserController {
     EventService eventService;
 
     @Autowired
-     JwtService jwtService;
+    JwtService jwtService;
 
     @Autowired
     private AuthenticationManager authManager;
@@ -45,36 +45,43 @@ public class UserController {
     @Autowired
     EventUserDetailsService userDetailsService;
 
+    @Autowired
+    ImageUploadService imageUploadService;
 
+    /**
+     * Fetch Current Authenticated User
+     **/
     @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser(Authentication authentication) {
-
-        if (authentication == null || !authentication.isAuthenticated()) {
+    public ResponseEntity<?> getCurrentUser(@AuthenticationPrincipal UserPrinciple userDetails) {
+        if (userDetails == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Unauthorized");
         }
-
-        UserPrinciple userDetails = (UserPrinciple) authentication.getPrincipal();
-
 
         UserResponse userResponse = UserResponse.builder()
                 .username(userDetails.getUsername())
                 .email(userDetails.getEmail())
                 .roles(userDetails.getAuthorities())
+                .fullname(userDetails.getFullname())
+                .profilePicUrl(userDetails.getProfilePicUrl())
                 .build();
 
         return ResponseEntity.ok(userResponse);
     }
 
-
+    /**
+     * User Registration
+     **/
     @PostMapping("/signup")
-    public User signUp(@RequestBody User user){
+    public User signUp(@RequestBody User user) {
         userService.saveUser(user);
         return user;
     }
 
+    /**
+     * User Login
+     **/
     @PostMapping("/signin")
     public ResponseEntity<Map<String, Object>> signIn(@RequestBody LoginRequest loginRequest) {
-
         Authentication authentication = authManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         loginRequest.getLogin(),
@@ -85,10 +92,7 @@ public class UserController {
         Map<String, Object> response = new HashMap<>();
 
         if (authentication.isAuthenticated()) {
-            // Get the authenticated principal
             UserPrinciple userDetails = (UserPrinciple) authentication.getPrincipal();
-
-            // Generate token with username (or email if you prefer)
             response.put("username", userDetails.getUsername());
             response.put("email", userDetails.getEmail());
             response.put("role", userDetails.getAuthorities());
@@ -101,9 +105,13 @@ public class UserController {
         return new ResponseEntity<>(response, HttpStatus.ACCEPTED);
     }
 
+    /**
+     * OAuth2 Success Handler
+     **/
     @GetMapping("/oauth2/success")
-    public ResponseEntity<Map<String, Object>> oauth2Success(Authentication authentication,
-                                                             HttpServletRequest request) {
+    public ResponseEntity<Map<String, Object>> oauth2Success(
+            Authentication authentication,
+            HttpServletRequest request) {
         Map<String, Object> response = new HashMap<>();
 
         if (authentication != null && authentication.isAuthenticated()) {
@@ -113,7 +121,6 @@ public class UserController {
                 String email = oauthUser.getAttribute("email");
                 String name = oauthUser.getAttribute("name");
 
-                // Either regenerate token or fetch from session
                 String token = (String) request.getSession().getAttribute("OAUTH2_TOKEN");
                 if (token == null) {
                     token = jwtService.generateToken(email);
@@ -134,40 +141,81 @@ public class UserController {
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 
-
-
+    /**
+     * Fetch All Users
+     **/
     @GetMapping("/getUsers")
-    public ResponseEntity<Map<String, Object>> getUsers(){
+    public ResponseEntity<Map<String, Object>> getUsers() {
         List<User> users = userService.getUsers();
         Map<String, Object> mp = new HashMap<>();
         mp.put("Users", users);
         return new ResponseEntity<>(mp, HttpStatus.ACCEPTED);
     }
 
-
+    /**
+     * Like an Event
+     **/
     @PostMapping("/liked/{id}")
-    public ResponseEntity<Map<String, Object>> likedEvent(@PathVariable Long id) {
-        userService.addEvent(id);
+    public ResponseEntity<Map<String, Object>> likedEvent(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserPrinciple userDetails) {
+        userService.addEvent(userDetails.getUsername(), id);
         Map<String, Object> mp = new HashMap<>();
         mp.put("Event", eventService.getEventById(id));
         return new ResponseEntity<>(mp, HttpStatus.ACCEPTED);
     }
 
+    /**
+     * Unlike an Event
+     **/
     @DeleteMapping("/unliked/{id}")
-    public ResponseEntity<Map<String, Object>> unlikedEvent(@PathVariable Long id) {
-        userService.removeEvent(id);
+    public ResponseEntity<Map<String, Object>> unlikedEvent(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserPrinciple userDetails) {
+        userService.removeEvent(userDetails.getUsername(), id);
         Map<String, Object> mp = new HashMap<>();
         mp.put("Event", eventService.getEventById(id));
         return new ResponseEntity<>(mp, HttpStatus.ACCEPTED);
     }
 
+    /**
+     * Fetch All Liked Events
+     **/
     @GetMapping("/liked")
-    public ResponseEntity<Map<String, Object>> getLikedEvents() {
-        List<EventResponse> likedEvents = userService.getLikedEvents();
+    public ResponseEntity<Map<String, Object>> getLikedEvents(
+            @AuthenticationPrincipal UserPrinciple userDetails) {
+        List<EventResponse> likedEvents = userService.getLikedEvents(userDetails.getUsername());
         Map<String, Object> response = new HashMap<>();
         response.put("likedEvents", likedEvents);
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
+    @PostMapping("/profile-pic/upload")
+    public ResponseEntity<Map<String, String>> uploadUserImage(@RequestParam("file") MultipartFile file,
+                                                  @AuthenticationPrincipal UserPrinciple userDetails) {
+            Map<String, String> mp = new HashMap<>();
+        try {
+            String url = imageUploadService.uploadImage(file);
+            userService.addProfileUrl(userDetails.getUsername(), url);
+            mp.put("imgUrl", url);
+            return new ResponseEntity<>(mp, HttpStatus.OK);
+        } catch (Exception e) {
+            mp.put("msg","Upload failed: " + e.getMessage() );
+            return new ResponseEntity<>(mp, HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/profile-pic")
+    public ResponseEntity<Map<String, String>> getUserImage(@AuthenticationPrincipal UserPrinciple userDetails) {
+        Map<String, String> mp = new HashMap<>();
+
+        String imgUrl = userService.getUserImage(userDetails.getUsername());
+        mp.put("imgUrl", imgUrl);
+
+        return new ResponseEntity<>(mp, HttpStatus.OK);
+    }
+
+
 
 
 }
