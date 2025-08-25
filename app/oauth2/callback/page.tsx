@@ -9,13 +9,13 @@ export default function PopupSuccess() {
   useEffect(() => {
     const email = searchParams.get("email");
     const name = searchParams.get("name");
-    const token = searchParams.get("token");
+
 
     if (window.opener) {
       window.opener.postMessage(
         {
           type: "OAUTH_LOGIN_SUCCESS",
-          token,
+          
           user: {
             name,
             email,

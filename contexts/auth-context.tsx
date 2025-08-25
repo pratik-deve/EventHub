@@ -1,159 +1,142 @@
-"use client"
+"use client";
 
-import { getUserProfile } from "@/api/userApi"
-import type React from "react"
-import { createContext, useContext, useEffect, useState } from "react"
+import api from "@/api/axiosInstance";
+import { getUserProfile } from "@/api/userApi";
+import type React from "react";
+import { createContext, useContext, useEffect, useState } from "react";
 
 interface User {
-
-  name: string
-  email: string
-  username: string
-  avatar?: string
-  isOrganizer: boolean
-  subscriptionStatus: "none" | "trial" | "monthly" | "yearly"
-  subscriptionExpiry?: string
-  trialStarted?: string
+  name: string;
+  email: string;
+  username: string;
+  avatar?: string;
+  isOrganizer: boolean;
+  subscriptionStatus: "none" | "trial" | "monthly" | "yearly";
+  subscriptionExpiry?: string;
+  trialStarted?: string;
 }
 
 interface AuthContextType {
-  user: User | null
-  isLoading: boolean
-  setUserProfilePic: (url: string) => Promise<void>
-  signIn: (login: string, password: string) => Promise<void>
-  signUp: (username: string, email: string, password: string) => Promise<void>
-  signOut: () => void
-  signInWithGoogle: () => Promise<void>
-  becomeOrganizer: (plan: "trial" | "monthly" | "yearly") => Promise<void>
-  updateSubscription: (plan: "monthly" | "yearly") => Promise<void>
+  user: User | null;
+  isLoading: boolean;
+  checkAuth: () => Promise<void>;
+  setUserProfilePic: (url: string) => Promise<void>;
+  signIn: (login: string, password: string) => Promise<void>;
+  signUp: (username: string, email: string, password: string) => Promise<void>;
+  signOut: () => void;
+  signInWithGoogle: () => Promise<void>;
+  becomeOrganizer: (plan: "trial" | "monthly" | "yearly") => Promise<void>;
+  updateSubscription: (plan: "monthly" | "yearly") => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
+
+  const checkAuth = async () => {
+      setIsLoading(true);
+      try {
+        const userData = await getUserProfile(); // Fetch user profile from the backend
+        setUser({
+          name: userData.username,
+          email: userData.email,
+          username: userData.username,
+          avatar: userData.profilePicUrl,
+          isOrganizer: userData.role?.some(
+            (r: { authority: string }) => r.authority === "ORGANIZER"
+          ) || false,
+          subscriptionStatus: "none",
+        });
+      } catch (error) {
+        console.error("Auth check failed:", error);
+        setUser(null); // Clear user state if the session is invalid
+      } finally {
+        setIsLoading(false);
+      }
+    };
   useEffect(() => {
-    // Check for existing session on mount
-      const checkAuth = async () => {
-        try {
-          const token = sessionStorage.getItem("auth_token");
-          if (token) {
-            
-           const res = await getUserProfile();
-
-            if (res.ok) {
-              const userData = await res.json();
-              const user: User = {
-                name: userData.user.username,
-                email: userData.user.email,
-                username: userData.user.username,
-                avatar: userData.user.profilePicUrl,
-                isOrganizer: userData.user.role?.some((r: { authority: string }) => r.authority === "ORGANIZER") || false,
-                subscriptionStatus: "none", // you can map from backend if available
-              };
-              setUser(user);
-            } else {
-              // Token invalid → clear session
-              sessionStorage.removeItem("auth_token");
-              setUser(null);
-            }
-          }
-        } catch (error) {
-          console.error("Auth check failed:", error);
-          sessionStorage.removeItem("auth_token");
-          setUser(null);
-        } finally {
-          setIsLoading(false);
-        }
-      };
-
       checkAuth();
     }, []);
 
   const signIn = async (login: string, password: string) => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      
-     const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users/signin`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users/signin`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include", // Include cookies
         body: JSON.stringify({
           login,
           password,
         }),
-      })
+      });
 
-      
-      const data = await response.json()
-      
+      if (!response.ok) throw new Error("Invalid credentials");
+
+      const data = await response.json();
+
       const userData: User = {
         name: data.user.username,
         username: data.user.username,
         email: data.user.email,
         avatar: data.user.profilePicUrl,
-        isOrganizer: data.user.role?.some((r: { authority: string }) => r.authority === "ORGANIZER") || false,
+        isOrganizer:
+          data.user.role?.some(
+            (r: { authority: string }) => r.authority === "ORGANIZER"
+          ) || false,
         subscriptionStatus: "none",
-      }
+      };
 
-      
-
-        sessionStorage.setItem("auth_token", data.authToken);
-
-        // user info only in Redux/Context
-        setUser(userData);
+      setUser(userData);
     } catch (error) {
-      throw new Error("Invalid credentials")
+      throw new Error("Invalid credentials");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const signUp = async (username: string, email: string, password: string) => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      // Simulate API call
-     const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users/signup`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users/signup`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
           username,
           email,
           password,
         }),
-      })
+      });
 
+      const data = await response.json();
 
-      const data = await response.json(); 
-      // Mock user data
       const userData: User = {
-    
         name: username,
         username: username,
         email: email,
         avatar: "/placeholder.svg?height=40&width=40",
         isOrganizer: false,
         subscriptionStatus: "none",
-      }
+      };
 
-      // Store auth data
-      sessionStorage.setItem("auth_token", data.authToken);
-
-        // user info only in Redux/Context
-        setUser(userData);
+      setUser(userData);
     } catch (error) {
-      throw new Error("Registration failed")
+      throw new Error("Registration failed");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
-  
+
+
 const signInWithGoogle = (): Promise<any> => {
   return new Promise((resolve, reject) => {
     try {
@@ -189,22 +172,19 @@ const signInWithGoogle = (): Promise<any> => {
 };
 
 
-  const setUserProfilePic = (url: string) => {
+  const setUserProfilePic = async (url: string) => {
     if (user) {
-      const updatedUser = { ...user, avatar: url }
-      setUser(updatedUser)
-      localStorage.setItem("user_data", JSON.stringify(updatedUser))
+      const updatedUser = { ...user, avatar: url };
+      setUser(updatedUser);
     }
-  }
-
+  };
 
   const becomeOrganizer = async (plan: "trial" | "monthly" | "yearly") => {
-    if (!user) throw new Error("User not authenticated")
+    if (!user) throw new Error("User not authenticated");
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
       const updatedUser: User = {
         ...user,
@@ -212,48 +192,53 @@ const signInWithGoogle = (): Promise<any> => {
         subscriptionStatus: plan,
         subscriptionExpiry:
           plan === "trial"
-            ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString() // 14 days
-            : new Date(Date.now() + (plan === "monthly" ? 30 : 365) * 24 * 60 * 60 * 1000).toISOString(),
+            ? new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+            : new Date(
+                Date.now() + (plan === "monthly" ? 30 : 365) * 24 * 60 * 60 * 1000
+              ).toISOString(),
         trialStarted: plan === "trial" ? new Date().toISOString() : undefined,
-      }
+      };
 
-      localStorage.setItem("user_data", JSON.stringify(updatedUser))
-      setUser(updatedUser)
+      localStorage.setItem("user_data", JSON.stringify(updatedUser));
+      setUser(updatedUser);
     } catch (error) {
-      throw new Error("Failed to upgrade to organizer")
+      throw new Error("Failed to upgrade to organizer");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const updateSubscription = async (plan: "monthly" | "yearly") => {
-    if (!user) throw new Error("User not authenticated")
+    if (!user) throw new Error("User not authenticated");
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1500))
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
       const updatedUser: User = {
         ...user,
         subscriptionStatus: plan,
-        subscriptionExpiry: new Date(Date.now() + (plan === "monthly" ? 30 : 365) * 24 * 60 * 60 * 1000).toISOString(),
-      }
+        subscriptionExpiry: new Date(
+          Date.now() + (plan === "monthly" ? 30 : 365) * 24 * 60 * 60 * 1000
+        ).toISOString(),
+      };
 
-      localStorage.setItem("user_data", JSON.stringify(updatedUser))
-      setUser(updatedUser)
+      localStorage.setItem("user_data", JSON.stringify(updatedUser));
+      setUser(updatedUser);
     } catch (error) {
-      throw new Error("Failed to update subscription")
+      throw new Error("Failed to update subscription");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const signOut = () => {
-    localStorage.removeItem("auth_token")
-    localStorage.removeItem("user_data")
-    setUser(null)
-  }
+    fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/users/signout`, {
+      method: "POST",
+      credentials: "include", // clear cookie
+    });
+    setUser(null);
+  };
 
   return (
     <AuthContext.Provider
@@ -266,18 +251,19 @@ const signInWithGoogle = (): Promise<any> => {
         signInWithGoogle,
         becomeOrganizer,
         updateSubscription,
-        setUserProfilePic
+        setUserProfilePic,
+        checkAuth,
       }}
     >
       {children}
     </AuthContext.Provider>
-  )
+  );
 }
 
 export function useAuth() {
-  const context = useContext(AuthContext)
+  const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider")
+    throw new Error("useAuth must be used within an AuthProvider");
   }
-  return context
+  return context;
 }

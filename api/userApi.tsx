@@ -7,12 +7,10 @@ export const getUserProfile = async () => {
 };
 
 export const updateUserProfilePic = async (formData: FormData) => {
-  const response = await api.post("/users/profile-pic/upload", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-    
-  })
-  return response.data
-}
+  const res = await api.post("/users/profile-pic/upload", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return res.data;
+};
+
 
