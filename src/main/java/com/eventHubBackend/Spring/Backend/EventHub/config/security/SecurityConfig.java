@@ -1,6 +1,7 @@
 package com.eventHubBackend.Spring.Backend.EventHub.config.security;
 
 import com.eventHubBackend.Spring.Backend.EventHub.jwt.JwtAuthenticationFilter;
+import com.eventHubBackend.Spring.Backend.EventHub.publicData.PublicEndpoints;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,15 +38,10 @@ public class SecurityConfig {
     @Autowired
     private OAuth2SuccessHandler oAuth2SuccessHandler;
 
+
+
     // Centralized list of public (no-auth) endpoints
-    private static final String[] PUBLIC_ENDPOINTS = {
-            "/api/users/signup",
-            "/api/users/signin",
-            "/api/users/oauth2/success",
-            "/api/events/**", // example for public events list
-            "/swagger-ui/**",        // if you expose Swagger
-            "/v3/api-docs/**"    // OpenAPI docs
-    };
+    private static final String[] PUBLIC_ENDPOINTS = PublicEndpoints.PUBLIC_ENDPOINTS;
 
     @Bean
     public AuthenticationProvider authenticationProvider() {

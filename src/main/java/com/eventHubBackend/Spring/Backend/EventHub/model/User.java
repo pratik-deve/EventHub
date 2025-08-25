@@ -4,6 +4,7 @@ import com.eventHubBackend.Spring.Backend.EventHub.model.enums.Role;
 import jakarta.persistence.*;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -15,6 +16,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "users")
+@Builder
 public class User {
 
     @Id
@@ -38,7 +40,7 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
-    private Role role = Role.USER;
+    private Role role;
 
 
     @ElementCollection
@@ -53,6 +55,10 @@ public class User {
     public void setDefaultFullName() {
         if (fullname == null || fullname.isEmpty()) {
             fullname = username;
+        }
+
+        if(role == null ){
+            role = Role.USER;
         }
     }
 

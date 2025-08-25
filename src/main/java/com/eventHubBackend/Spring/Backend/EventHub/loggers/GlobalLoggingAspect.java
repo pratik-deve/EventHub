@@ -25,8 +25,8 @@ public class GlobalLoggingAspect {
 
     // Centralized list of public (no-auth) endpoints
     private static final String[] PUBLIC_ENDPOINTS = {
-            "/api/users/signup",
-            "/api/users/signin",
+            "/api/users/signup/**",
+            "/api/users/signin/**",
     };
 
     private boolean isPublic() {

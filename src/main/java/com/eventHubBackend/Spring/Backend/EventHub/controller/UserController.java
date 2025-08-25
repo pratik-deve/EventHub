@@ -11,8 +11,11 @@ import com.eventHubBackend.Spring.Backend.EventHub.service.EventUserDetailsServi
 import com.eventHubBackend.Spring.Backend.EventHub.service.ImageUploadService;
 import com.eventHubBackend.Spring.Backend.EventHub.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -74,7 +77,7 @@ public class UserController {
      * User Login
      **/
     @PostMapping("/signin")
-    public ResponseEntity<Map<String, Object>> signIn(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<Map<String, Object>> signIn(@RequestBody LoginRequest loginRequest, HttpServletResponse response) {
         Authentication authentication = authManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         loginRequest.getLogin(),
@@ -82,30 +85,42 @@ public class UserController {
                 )
         );
 
-        Map<String, Object> response = new HashMap<>();
+        Map<String, Object> res = new HashMap<>();
 
         if (authentication.isAuthenticated()) {
             UserPrinciple userDetails = (UserPrinciple) authentication.getPrincipal();
             UserResponse userResponse = userService.getUserResponse(userDetails.getUsername());
-            response.put("user", userResponse);
-            response.put("authToken", jwtService.generateToken(userDetails.getUsername()));
-            response.put("Msg", "Logged In Successfully!!");
+            String jwtToken = jwtService.generateToken(userDetails.getUsername());
+
+            // Set JWT in Secure HTTP-Only Cookie
+            ResponseCookie cookie = ResponseCookie.from("authToken", jwtToken)
+                    .httpOnly(true)
+                    .secure(true)  // Use true in production (HTTPS)
+                    .sameSite("Strict") // Or "Lax" for cross-site with OAuth
+                    .path("/")
+                    .maxAge(24 * 60 * 60) // 1 day expiry
+                    .build();
+
+            response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
+            res.put("user", userResponse);
+            res.put("Msg", "Logged In Successfully!!");
         } else {
-            response.put("Msg", "Login Failed !!");
+            res.put("Msg", "Login Failed!!");
         }
 
-        return new ResponseEntity<>(response, HttpStatus.ACCEPTED);
+        return ResponseEntity.ok(res);
     }
+
 
 
     /**
      * OAuth2 Success Handler
      **/
+
     @GetMapping("/oauth2/success")
-    public ResponseEntity<Map<String, Object>> oauth2Success(
-            Authentication authentication,
-            HttpServletRequest request) {
-        Map<String, Object> response = new HashMap<>();
+    public ResponseEntity<Map<String, Object>> oauth2Success(Authentication authentication) {
+        Map<String, Object> res = new HashMap<>();
 
         if (authentication != null && authentication.isAuthenticated()) {
             Object principal = authentication.getPrincipal();
@@ -114,25 +129,39 @@ public class UserController {
                 String email = oauthUser.getAttribute("email");
                 String name = oauthUser.getAttribute("name");
 
-                String token = (String) request.getSession().getAttribute("OAUTH2_TOKEN");
-                if (token == null) {
-                    token = jwtService.generateToken(email);
-                }
-
-                response.put("username", name);
-                response.put("email", email);
-                response.put("role", authentication.getAuthorities());
-                response.put("authToken", token);
-                response.put("Msg", "OAuth2 Login Successful!!");
-            } else {
-                response.put("Msg", "OAuth2 Login Failed!!");
+                res.put("username", name);
+                res.put("email", email);
+                res.put("role", authentication.getAuthorities());
+                res.put("profilePicUrl", oauthUser.getAttribute("picture")); // Optional: Profile picture
+                res.put("Msg", "OAuth2 Login Successful!!");
             }
         } else {
-            response.put("Msg", "Authentication Failed!!");
+            res.put("Msg", "Authentication Failed!!");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(res);
         }
 
-        return new ResponseEntity<>(response, HttpStatus.OK);
+        return ResponseEntity.ok(res);
     }
+
+    @PostMapping("/signout")
+    public ResponseEntity<Map<String, String>> signOut(HttpServletResponse response) {
+        ResponseCookie deleteCookie = ResponseCookie.from("authToken", "")
+                .httpOnly(true)
+                .secure(true)  // match your login cookie settings
+                .sameSite("Strict")
+                .path("/")
+                .maxAge(0)     // expire immediately
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, deleteCookie.toString());
+
+        Map<String, String> res = new HashMap<>();
+        res.put("message", "Signed out successfully");
+
+        return ResponseEntity.ok(res);
+    }
+
+
 
     /**
      * Fetch All Users
