@@ -119,7 +119,7 @@ export default function OrganizerDashboardPage() {
             <div>
               <h1 className="text-3xl sm:text-4xl font-serif font-bold mb-2">Organizer Dashboard</h1>
               <p className="text-muted-foreground text-lg">
-                Welcome back, {user?.name?.split(" ")[0]}! Manage your events and track performance.
+                Welcome back, {user?.fullname?.split(" ")[0]}! Manage your events and track performance.
               </p>
             </div>
             <Button asChild className="bg-gradient-to-r from-primary to-secondary">

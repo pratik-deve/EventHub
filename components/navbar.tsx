@@ -125,8 +125,8 @@ export function Navbar() {
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                     <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                       <Avatar className="h-8 w-8">
-                        <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
-                        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                        <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.fullname} />
+                        <AvatarFallback>{user.fullname.charAt(0)}</AvatarFallback>
                       </Avatar>
                       {user.isOrganizer && (
                         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2 }}>
@@ -141,7 +141,7 @@ export function Navbar() {
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1 leading-none">
-                      <p className="font-medium">{user.name}</p>
+                      <p className="font-medium">{user.fullname}</p>
                       <p className="w-[200px] truncate text-sm text-muted-foreground">{user.email}</p>
                       {user.isOrganizer && (
                         <Badge variant="secondary" className="w-fit text-xs">
@@ -308,7 +308,7 @@ export function Navbar() {
                     className="pt-4 space-y-2"
                   >
                     <div className="px-3 py-2">
-                      <p className="font-medium">{user.name}</p>
+                      <p className="font-medium">{user.fullname}</p>
                       <p className="text-sm text-muted-foreground">{user.email}</p>
                       {user.isOrganizer && (
                         <Badge variant="secondary" className="mt-1 text-xs">

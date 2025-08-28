@@ -16,12 +16,12 @@ import { ModeToggle } from "@/components/mode-toggle"
 import { User, Mail, Lock, Camera, Save, Crown, Calendar, ArrowRight } from "lucide-react"
 import Link from "next/link"
 import axios from "axios"
-import { updateUserProfilePic } from "@/api/userApi"
+import { updateUserProfile, updateUserProfilePic } from "@/api/userApi"
 import { set } from "date-fns"
 import api from "@/api/axiosInstance"
 
 export default function ProfilePage() {
-  const { user } = useAuth()
+  const { user, updateUser } = useAuth()
   const { toast } = useToast()
   const [isEditing, setIsEditing] = useState(false)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
@@ -30,13 +30,14 @@ export default function ProfilePage() {
   // Form states
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [name, setName] = useState(user?.name || "")
-  const [username, setUsername] = useState(user?.name || "") // Initially set to the same as full name
+  const [fullname, setFullname] = useState(user?.name || "")
+  const [username, setUsername] = useState(user?.username || "") // Initially set to the same as full name
   const [email, setEmail] = useState(user?.email || "")
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [isSelectingFile, setIsSelectingFile] = useState(false)
+
 
   const {setUserProfilePic} = useAuth()
 
@@ -54,8 +55,6 @@ export default function ProfilePage() {
     formData.append("file", selectedFile)
 
     try {
-        
-      
 
       const data = await updateUserProfilePic(formData); 
         if(!data.imgUrl){
@@ -90,27 +89,39 @@ export default function ProfilePage() {
 
 
   const handleSaveProfile = async () => {
-    setIsSaving(true)
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
-      toast({
-        title: "Profile updated",
-        description: "Your profile has been updated successfully.",
-      })
-      setIsEditing(false)
-    } catch (error) {
-      toast({
-        title: "Update failed",
-        description: "Please try again later.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsSaving(false)
-    }
+  if (!user || !user.id) {
+    toast({
+      title: "User not found",
+      description: "Please sign in again.",
+      variant: "destructive",
+    });
+    return;
   }
 
+  setIsSaving(true);
+  try {
+    // Send the current user ID and updated profile data to the backend
+    await updateUserProfile(user.id, { fullname, username, email });
+
+     updateUser({ fullname, username, email }); // Update context
+
+    toast({
+      title: "Profile updated",
+      description: "Your profile has been updated successfully.",
+    });
+
+    setIsEditing(false);
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    toast({
+      title: "Update failed",
+      description: "Please try again later.",
+      variant: "destructive",
+    });
+  } finally {
+    setIsSaving(false);
+  }
+};
   const handleChangePassword = async () => {
     if (newPassword !== confirmPassword) {
       toast({
@@ -320,8 +331,8 @@ export default function ProfilePage() {
                         <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input
                           id="name"
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
+                          value={fullname}
+                          onChange={(e) => setFullname(e.target.value)}
                           disabled={!isEditing}
                           className="pl-10"
                         />
@@ -370,7 +381,7 @@ export default function ProfilePage() {
                         variant="outline"
                         onClick={() => {
                           setIsEditing(false)
-                          setName(user?.name || "")
+                          setFullname(user?.name || "")
                           setEmail(user?.email || "")
                         }}
                       >

@@ -121,7 +121,7 @@ export default function DashboardPage() {
           {/* Welcome Section */}
           <div className="mb-8">
             <h1 className="text-3xl sm:text-4xl font-serif font-bold mb-2">
-              Welcome back, {user?.name?.split(" ")[0]}! 👋
+              Welcome back, {user?.fullname?.split(" ")[0]}! 👋
             </h1>
             <p className="text-muted-foreground text-lg">Manage your bookings and discover new events</p>
           </div>

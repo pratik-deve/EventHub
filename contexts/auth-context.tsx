@@ -5,8 +5,9 @@ import { getUserProfile } from "@/api/userApi";
 import type React from "react";
 import { createContext, useContext, useEffect, useState } from "react";
 
-interface User {
-  name: string;
+export interface User {
+  id?: number; 
+  fullname: string;
   email: string;
   username: string;
   avatar?: string;
@@ -27,6 +28,7 @@ interface AuthContextType {
   signInWithGoogle: () => Promise<void>;
   becomeOrganizer: (plan: "trial" | "monthly" | "yearly") => Promise<void>;
   updateSubscription: (plan: "monthly" | "yearly") => Promise<void>;
+  updateUser: (updatedUser: Partial<User>) => void; // Add this method
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -41,7 +43,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const userData = await getUserProfile(); // Fetch user profile from the backend
         setUser({
-          name: userData.username,
+          id: userData.id,
+          fullname: userData.fullname,
           email: userData.email,
           username: userData.username,
           avatar: userData.profilePicUrl,
@@ -81,7 +84,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await response.json();
 
       const userData: User = {
-        name: data.user.username,
+        id: data.user.id,
+        fullname: data.user.fullname,
         username: data.user.username,
         email: data.user.email,
         avatar: data.user.profilePicUrl,
@@ -119,7 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const data = await response.json();
 
       const userData: User = {
-        name: username,
+        fullname: username,
         username: username,
         email: email,
         avatar: "/placeholder.svg?height=40&width=40",
@@ -171,6 +175,11 @@ const signInWithGoogle = (): Promise<any> => {
   });
 };
 
+  const updateUser = (updatedUser: Partial<User>) => {
+    if (user) {
+      setUser({ ...user, ...updatedUser });
+    }
+  };
 
   const setUserProfilePic = async (url: string) => {
     if (user) {
@@ -253,6 +262,7 @@ const signInWithGoogle = (): Promise<any> => {
         updateSubscription,
         setUserProfilePic,
         checkAuth,
+        updateUser,
       }}
     >
       {children}
