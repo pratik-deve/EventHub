@@ -64,4 +64,9 @@ public class UserPrinciple implements UserDetails {
     public String getProfilePicUrl() {
        return user.getProfilePicUrl();
     }
+
+    public Integer getId() {
+
+       return user.getId();
+    }
 }

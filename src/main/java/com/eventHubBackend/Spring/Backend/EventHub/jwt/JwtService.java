@@ -1,12 +1,16 @@
 package com.eventHubBackend.Spring.Backend.EventHub.jwt;
 
 
+import com.eventHubBackend.Spring.Backend.EventHub.model.User;
+import com.eventHubBackend.Spring.Backend.EventHub.principles.UserPrinciple;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -44,13 +48,13 @@ public class JwtService {
         }
     }
 
-    public String generateToken(String userName){
+    public String generateToken(String username){
 
         Map<String, Object> claims = new HashMap<>();
 
         return Jwts.builder()
                 .setClaims(claims)
-                .setSubject(userName)
+                .setSubject(username)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + jwtExpiration.toMillis()))
                 .signWith(getKey(), SignatureAlgorithm.HS256)
@@ -64,7 +68,7 @@ public class JwtService {
         return Keys.hmacShaKeyFor(keyBytes);
     }
 
-    public String extractUserName(String token){
+    public String extractUsername(String token){
         return extractClaim(token, Claims::getSubject);
     }
 
@@ -80,7 +84,7 @@ public class JwtService {
     }
 
     public boolean validateToken(String token, UserDetails userDetails){
-        final String userName = extractUserName(token);
+        final String userName = extractUsername(token);
         return (userName.equals(userDetails.getUsername()) && !isTokenExpired(token));
     }
 
@@ -91,4 +95,21 @@ public class JwtService {
     private Date extractExpiration(String token){
         return extractClaim(token, Claims::getExpiration);
     }
+
+    public String refreshAuthentication(User user) {
+        UserPrinciple userPrinciple = new UserPrinciple(user);
+
+        UsernamePasswordAuthenticationToken authToken =
+                new UsernamePasswordAuthenticationToken(
+                        userPrinciple,
+                        null,
+                        userPrinciple.getAuthorities()
+                );
+
+        SecurityContextHolder.getContext().setAuthentication(authToken);
+
+        // Ensure you use the same field used during JWT creation & validation
+        return generateToken(userPrinciple.getUsername());
+    }
+
 }

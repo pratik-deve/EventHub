@@ -51,7 +51,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String token = extractToken(request);
 
             if (token != null) {
-                String userName = jwtService.extractUserName(token);
+                String userName = jwtService.extractUsername(token);
 
                 if (userName != null && SecurityContextHolder.getContext().getAuthentication() == null) {
                     UserDetails userDetails = context.getBean(EventUserDetailsService.class)

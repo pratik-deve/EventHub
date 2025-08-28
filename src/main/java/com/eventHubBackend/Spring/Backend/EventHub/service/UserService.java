@@ -1,17 +1,25 @@
 package com.eventHubBackend.Spring.Backend.EventHub.service;
 
+import com.eventHubBackend.Spring.Backend.EventHub.BeanUtils.UpdateUtil;
+import com.eventHubBackend.Spring.Backend.EventHub.jwt.JwtService;
 import com.eventHubBackend.Spring.Backend.EventHub.model.User;
 import com.eventHubBackend.Spring.Backend.EventHub.principles.UserPrinciple;
 import com.eventHubBackend.Spring.Backend.EventHub.repository.UserRepo;
 import com.eventHubBackend.Spring.Backend.EventHub.reqresdto.EventResponse;
+import com.eventHubBackend.Spring.Backend.EventHub.reqresdto.UserRequest;
 import com.eventHubBackend.Spring.Backend.EventHub.reqresdto.UserResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class UserService {
@@ -21,6 +29,9 @@ public class UserService {
 
     @Autowired
     private EventService eventService;
+
+    @Autowired
+    private JwtService jwtService;
 
     private final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
@@ -79,6 +90,24 @@ public class UserService {
                 .roles(userDetails.getRole())
                 .fullname(userDetails.getFullname())
                 .profilePicUrl(userDetails.getProfilePicUrl())
+                .id(userDetails.getId())
                 .build();
+    }
+
+    @Transactional
+    public User updateUser(Integer userId, UserRequest userRequest, UserPrinciple userDetails) {
+
+        User user = repo.findById(userDetails.getId()).orElseThrow(() -> new RuntimeException("User not found 404"));
+
+
+        if(userRequest.getFullname() != null) user.setFullname(userRequest.getFullname());
+        if(userRequest.getUsername() != null) user.setUsername(userRequest.getUsername());
+        if(userRequest.getEmail() != null) user.setEmail(userRequest.getEmail());
+
+        User updatedUser = repo.save(user);
+
+      return updatedUser;
+
+
     }
 }

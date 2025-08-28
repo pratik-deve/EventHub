@@ -5,6 +5,7 @@ import com.eventHubBackend.Spring.Backend.EventHub.model.User;
 import com.eventHubBackend.Spring.Backend.EventHub.principles.UserPrinciple;
 import com.eventHubBackend.Spring.Backend.EventHub.reqresdto.EventResponse;
 import com.eventHubBackend.Spring.Backend.EventHub.reqresdto.LoginRequest;
+import com.eventHubBackend.Spring.Backend.EventHub.reqresdto.UserRequest;
 import com.eventHubBackend.Spring.Backend.EventHub.reqresdto.UserResponse;
 import com.eventHubBackend.Spring.Backend.EventHub.service.EventService;
 import com.eventHubBackend.Spring.Backend.EventHub.service.EventUserDetailsService;
@@ -21,6 +22,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,6 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/users")
@@ -238,6 +241,36 @@ public class UserController {
     }
 
 
+    @PutMapping("/{userId}/profile-update")
+    public ResponseEntity<Map<String, Object>> updateProfile(@PathVariable Integer userId,
+                                                             @RequestBody UserRequest userRequest,
+                                                             @AuthenticationPrincipal UserPrinciple userDetials,
+                                                             HttpServletResponse response){
 
+
+        User user = userService.updateUser(userId, userRequest, userDetials);
+
+        String token = jwtService.refreshAuthentication(user);
+
+        Map<String, Object> res = new HashMap<>();
+
+        UserResponse userResponse = userService.getUserResponse(user.getUsername());
+
+        // Set JWT in Secure HTTP-Only Cookie
+        ResponseCookie cookie = ResponseCookie.from("authToken", token)
+                .httpOnly(true)
+                .secure(true)  // Use true in production (HTTPS)
+                .sameSite("Strict") // Or "Lax" for cross-site with OAuth
+                .path("/")
+                .maxAge(24 * 60 * 60) // 1 day expiry
+                .build();
+
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
+
+        res.put("user", userResponse);
+        res.put("Msg", "Updated Profile Successfully !!");
+        return new ResponseEntity<>(res, HttpStatus.OK);
+
+    }
 
 }
