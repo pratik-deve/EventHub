@@ -49,6 +49,8 @@ public class User {
     private Set<Long> likedEventId = new HashSet<>();
 
 
+    @Column(nullable = false)
+    private boolean isVerified = false;
 
 
     @PrePersist
