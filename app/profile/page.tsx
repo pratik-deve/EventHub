@@ -30,7 +30,7 @@ export default function ProfilePage() {
   // Form states
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [fullname, setFullname] = useState(user?.name || "")
+  const [fullname, setFullname] = useState(user?.fullname || "")
   const [username, setUsername] = useState(user?.username || "") // Initially set to the same as full name
   const [email, setEmail] = useState(user?.email || "")
   const [currentPassword, setCurrentPassword] = useState("")
